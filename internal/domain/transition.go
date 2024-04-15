@@ -5,5 +5,4 @@ type Transition struct {
 	From  *State
 	To    *State
 	Event Event
-	Name  string
 }

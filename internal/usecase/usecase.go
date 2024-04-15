@@ -1,19 +1,22 @@
 package usecase
 
+import "github.com/timickb/go-stateflow/internal/domain"
+
 type InstanceRunner interface {
 }
 
-type PlantUMLParser interface {
+type StateDiagramParser interface {
+	Parse(filePath string) (*domain.Scenario, error)
 }
 
 type Usecase struct {
 	instanceRunner InstanceRunner
-	plantUMLParser PlantUMLParser
+	scenarioParser StateDiagramParser
 }
 
-func New(runner InstanceRunner, parser PlantUMLParser) *Usecase {
+func New(runner InstanceRunner, parser StateDiagramParser) *Usecase {
 	return &Usecase{
 		instanceRunner: runner,
-		plantUMLParser: parser,
+		scenarioParser: parser,
 	}
 }

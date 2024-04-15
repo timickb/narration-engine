@@ -4,3 +4,12 @@ package domain
 type Event struct {
 	Name string
 }
+
+var (
+	EventStart    Event = Event{Name: "start"}
+	EventContinue Event = Event{Name: "continue"}
+	EventJoin     Event = Event{Name: "join"}
+	EventParent   Event = Event{Name: "parent"}
+	EventChild    Event = Event{Name: "child"}
+	EventBreak    Event = Event{Name: "break"}
+)

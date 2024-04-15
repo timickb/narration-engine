@@ -1,0 +1,15 @@
+version: v1
+plugins:
+  - name: go
+    out: v1/gen
+    opt: paths=source_relative
+  - name: go-grpc
+    out: v1/gen
+    opt:
+      - paths=source_relative
+      - require_unimplemented_servers=false
+  - name: grpc-gateway
+    out: v1/gen
+    opt:
+      - logtostderr=true
+      - paths=source_relative

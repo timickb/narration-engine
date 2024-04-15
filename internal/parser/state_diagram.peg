@@ -1,0 +1,100 @@
+package parser
+
+import "github.com/timickb/go-stateflow/internal/domain"
+
+type StateDiagram Peg {
+    States
+    Transitions
+
+    Name string
+    Title string
+    Version string
+
+    word string
+    tags []string
+    params map[string] domain.StateParamValue
+    stateFrom string
+    stateTo string
+    stateName string
+    eventName string
+    handlerName string
+    paramName string
+    paramValue string
+    contextVarPath string
+    delay string
+}
+
+StateDiagram <- Start (Version / Name / Transition / Title / StateSkin / State / HideEmptyDescription / Theme / Skinparam / Var / Comment)* End !.
+
+identifier <- [a-zA-Z0-9_]+
+anyChar <- [^\r\n :-><\t/]
+anySequence <- [^\r\n]+
+NL <- ('\r\n' / '\n')*
+SP <- ( ' ' / '\t' / '\\n' )*
+
+Word <- < anyChar+ > { p.word = text }
+Tag <- '<<' < identifier > '>>' { p.AddTag(text) }
+Duration <- < [0-9]+ ('s' / 'm' / 'h' / 'd') >
+
+Title <- 'title' SP < anySequence > NL { p.Title = text }
+Name <- '!$name' SP '=' SP '"' < anySequence > '"' NL { p.Name = text }
+Version <- '!$version' SP '=' SP '"'? < [0-9]+.[0-9]+ > '"'? NL { p.setVersion(text) }
+HideEmptyDescription <- 'hide empty description' NL
+Theme <- '!theme' SP anySequence SP NL
+Skinparam <- 'skinparam' SP anySequence SP NL
+StateSkin <- 'state' SP StateName SP '#' anyChar+ NL
+Var <- '!$' identifier SP '=' SP '"'? anySequence + '"'? NL
+Comment <- '\'' SP anySequence NL
+
+Start <- '@startuml' NL
+End <- '@enduml' NL
+Arr <- '->'
+DoubleArr <- ( '-' Arr )
+TripleArr <- ( '-' DoubleArr )
+DirectionArr <- ( '-' Direction Arr )
+BackArr <- '<-'
+DoubleBackArr <- ( BackArr '-' )
+TripleBackArr <- ( DoubleBackArr '-' )
+DirectionBackArr <- ( BackArr Direction '-' )
+Arrow <- ( Arr / DoubleArr / TripleArr / DirectionArr )
+BackArrow <- ( BackArr / DoubleBackArr / TripleBackArr / DirectionBackArr )
+Direction <- ('up' / 'down' / 'right' / 'left' / 'l' / 'r' / 'u' / 'd')
+
+TerminalState <- '[*]'
+StateFrom <- ( TermState { p.stateFrom = "START" } / Word { p.stateFrom = p.word } )
+StateTo <- ( TermState { p.stateTo = "END" } / Word { p.stateTo = p.word } )
+StateName <- Word { p.stateName = p.word }
+Delay <- 'delay=' Duration { p.delay = text }
+
+contextVarPath <- 'ctx' ('.' identifier)+
+ParamName <- < identifier > { p.paramName = text }
+ParamValue <- SP '=' SP '"' < [^"]+ > '"' { p.paramValue = text }
+ParamValueFromContext <- SP '=' SP < contextVarPath > { p.contextVarPath = text }
+Param <- ParamName (ParamValueFromContext / ParamValue)? { p.appendParam() }
+
+HandlerName <- < (identifier '.')? identifier > { p.handlerName = text }
+
+EventName <- '[' < identifier > ']' { p.eventName = text}
+
+State <- 'state' SP StateName SP (tag SP?)* SP (':' SP (Delay / Handler))? NL
+    {
+        dto := &AddStateDto {
+            StateName: p.stateName,
+            Handler: p.handlerName,
+            Params: p.params,
+        }
+        p.AddState(dto);
+        p.clearState()
+    }
+Transition <- (StateFrom SP Arrow SP StateTo / StateTo SP BackArrow SP StateFrom ) SP (':' sp EventName)? NL
+    {
+        dto := &AddTransitionDto {
+            StateFrom: p.stateFrom,
+            StateTo: p.stateTo,
+            Event: p.eventName,
+        }
+        p.AddTransition(dto);
+        p.clearState()
+    }
+
+

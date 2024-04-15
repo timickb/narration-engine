@@ -1,0 +1,122 @@
+syntax = "proto3";
+
+package schema.v1;
+
+option go_package = "github.com/timickb/go-stateflow/proto/gen/go-stateflow;go-stateflow";
+
+// Stateflow - сервис конечных автоматов.
+service StateflowService {
+  // Start - создать и запустить на выполнение экземпляр сценария.
+  rpc Start(StartRequest) returns (StartResponse);
+  // SendEvent - отправить событие в экземпляр сценария.
+  rpc SendEvent(SendEventRequest) returns (SendEventResponse);
+  // GetState - получить информацию о состоянии экземпляра сценария.
+  rpc GetState(GetStateRequest) returns (GetStateResponse);
+}
+
+// Worker - программный интерфейс, реализуемый сторонними сервисами-обработчиками.
+service WorkerService {
+  // Handle - вызов обработчика состояния.
+  rpc Handle(HandleRequest) returns (HandleResponse);
+}
+
+// StartRequest - запрос запуска экземпляра сценария
+message StartRequest {
+  // scenario_name - название сценария
+  string scenario_name = 1;
+  // scenario_version - версия сценария
+  string scenario_version = 2;
+  // blocking_key - блокирующий идентификатор
+  string blocking_key = 3;
+  // context - json-строка с параметрами, которые нужно положить в контекст экземпляра.
+  string context = 4;
+}
+
+message StartResponse {
+  // status - статус ответа.
+  Status status = 1;
+  // instance_id - uuid запущенного экземпляра.
+  string instance_id = 2;
+  // event_id - идентификатор события старта экземпляра.
+  string event_id = 3;
+}
+
+// SendEventRequest - запрос отправки события в экземпляр.
+message SendEventRequest {
+  // instance_id - uuid экземпляра.
+  string instance_id = 1;
+  // event - название события
+  string event = 2;
+  // event_params - параметры, которые нужно положить в контекст с событием.
+  string event_params = 3;
+}
+
+// SendEventResponse - ответ на SendEventRequest.
+message SendEventResponse {
+  // status - статус ответа.
+  Status status = 1;
+  // event_id - идентификатор события.
+  string event_id = 2;
+  // context - текущее состояние контекста экземпляра (json)
+  string context = 3;
+}
+
+// GetStateRequest - запрос получения состояния экземпляра.
+message GetStateRequest {
+  // instance_id - uuid экземпляра.
+  string instance_id = 1;
+}
+
+// GetStateResponse - ответ на GetStateRequest.
+message GetStateResponse {
+  // status - статус ответа.
+  Status status = 1;
+  // state - состояние экземпляра.
+  State state = 2;
+}
+
+message HandleRequest {
+  // instance_id - идентификатор экземпляра.
+  string instance_id = 1;
+  // context - данные экземпляра (json)
+  string context = 2;
+  // state - название соответствующего состояния.
+  string state = 3;
+}
+
+message HandleResponse {
+  // status - статус ответа.
+  Status status = 1;
+  // next_event - следующее событие
+  string next_event = 2;
+  // next_event_payload - данные для следующего события (json).
+  string next_event_payload = 3;
+  // data_to_context - данные для сохранения в контексте экземпляра.
+  string data_to_context = 4;
+}
+
+// Status - статус ответа.
+message Status {
+  // Error - структура ошибки.
+  message Error {
+    // code - код ошибки.
+    int32 code = 1;
+    // message - текст ошибки.
+    string message = 2;
+  }
+
+  // error - ошибка.
+  Error error = 1;
+}
+
+// State - состояние экземпляра
+message State {
+  // current_name - название текущего состояния
+  string current_name = 1;
+  // previous_name - название предыдущего состояния.
+  string previous_name = 2;
+  // last_event - по какому событию произошел переход в текущее состояние из предыдущего.
+  string last_event = 3;
+  // context - текущее состояние контекста экземпляра (json)
+  string context = 4;
+}
