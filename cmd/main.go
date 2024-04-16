@@ -38,8 +38,9 @@ func mainNoExit(cfgPath string) error {
 		return fmt.Errorf("create app builder: %w", err)
 	}
 
+	log.Printf("Starting gRPC server on port %d", b.ServerPort())
 	if err = b.ServeGrpc(); err != nil {
-		return fmt.Errorf("server grpc: %w", err)
+		log.Fatalf("Fail to serve grpc: %s", err.Error())
 	}
 
 	return nil

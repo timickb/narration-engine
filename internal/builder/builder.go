@@ -9,7 +9,9 @@ import (
 	"github.com/timickb/go-stateflow/internal/usecase"
 	"github.com/timickb/go-stateflow/migrations"
 	"github.com/timickb/go-stateflow/pkg/db"
+	schema "github.com/timickb/go-stateflow/schema/v1/gen"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 	"net"
 )
 
@@ -43,6 +45,10 @@ func (b *Builder) ServeGrpc() error {
 	return b.srv.Serve(b.listener)
 }
 
+func (b *Builder) ServerPort() int {
+	return b.cfg.GrpcPort
+}
+
 func (b *Builder) initDatabase() error {
 	d, err := db.CreatePostgresConnection(b.ctx, b.cfg.Database)
 	if err != nil {
@@ -71,9 +77,10 @@ func (b *Builder) buildGrpcServer() error {
 	}
 	b.listener = listener
 
-	_ = controller.New(b.usecase)
+	ctrl := controller.New(b.usecase)
 	srv := grpc.NewServer()
-	// TODO: register controller
+	schema.RegisterStateflowServiceServer(srv, ctrl)
+	reflection.Register(srv)
 	b.srv = srv
 	return nil
 }

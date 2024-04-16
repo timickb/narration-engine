@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package schema.v1;
 
-option go_package = "github.com/timickb/go-stateflow/proto/gen/go-stateflow;go-stateflow";
+option go_package = "github.com/timickb/stateflow/proto/gen/stateflow;stateflow";
 
 // Stateflow - сервис конечных автоматов.
 service StateflowService {
@@ -27,7 +27,7 @@ message StartRequest {
   // scenario_version - версия сценария
   string scenario_version = 2;
   // blocking_key - блокирующий идентификатор
-  string blocking_key = 3;
+  optional string blocking_key = 3;
   // context - json-строка с параметрами, которые нужно положить в контекст экземпляра.
   string context = 4;
 }

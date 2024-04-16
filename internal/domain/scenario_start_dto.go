@@ -2,6 +2,8 @@ package domain
 
 // ScenarioStartDto Структура с данными для старта экземпляра сценария.
 type ScenarioStartDto struct {
-	ScenarioName string
-	Payload      []byte
+	ScenarioName    string
+	ScenarioVersion string
+	BlockingKey     *string
+	Context         []byte
 }
