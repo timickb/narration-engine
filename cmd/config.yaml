@@ -1,0 +1,11 @@
+grpc_port: 2140
+database:
+  host: localhost
+  user: go-stateflow
+  name: go-stateflow
+  password: qwerty
+  port: 5445
+  ssl_mode: disable
+  max_open_connections: 20
+  max_idle_connections: 20
+  auto_migrate: true

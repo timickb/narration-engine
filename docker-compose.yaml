@@ -1,0 +1,15 @@
+services:
+
+  postgres_db:
+    image: postgres:15.0-alpine
+    command: postgres -c 'max_connections=5000'
+    restart: on-failure
+    volumes:
+      - ./.postgres_data/:/var/lib/postgresql/data
+    ports:
+      - "5445:5432"
+    environment:
+      POSTGRES_PASSWORD: qwerty
+      POSTGRES_USER: go-stateflow
+      POSTGRES_DB: go-stateflow
+      POSTGRES_HOST_AUTH_METHOD: trust

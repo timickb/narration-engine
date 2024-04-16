@@ -122,7 +122,8 @@ func (d *StateDiagram) clearState() {
 	d.stateTo = ""
 	d.stateName = ""
 	d.eventName = ""
-	d.tags = make([]string, 0)
+	d.tags = nil
+	d.params = nil
 	d.contextVarPath = ""
 	d.word = ""
 	d.delay = ""
