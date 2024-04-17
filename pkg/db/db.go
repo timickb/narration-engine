@@ -10,10 +10,12 @@ import (
 
 type dbKey struct{}
 
+// Database Обертка над gorm.DB
 type Database struct {
 	db *gorm.DB
 }
 
+// CreatePostgresConnection Установить соединение с PostgreSQL и создать инстанс Database.
 func CreatePostgresConnection(ctx context.Context, cfg *PostgresConfig) (*Database, error) {
 	db, err := gorm.Open(postgres.Open(cfg.DSNString()))
 	if err != nil {
@@ -34,6 +36,7 @@ func CreatePostgresConnection(ctx context.Context, cfg *PostgresConfig) (*Databa
 	return &Database{db: db}, nil
 }
 
+// WithTxSupport Инстанс БД в контексте запущенной транзакции.
 func (d *Database) WithTxSupport(ctx context.Context) *Database {
 	dbWithCtx := fetchDbFromCtx(ctx)
 	if dbWithCtx == nil {
@@ -42,6 +45,7 @@ func (d *Database) WithTxSupport(ctx context.Context) *Database {
 	return dbWithCtx
 }
 
+// SqlDB Получить инстанс sql.DB
 func (d *Database) SqlDB() (*sql.DB, error) {
 	return d.db.DB()
 }

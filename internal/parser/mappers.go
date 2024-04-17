@@ -6,6 +6,7 @@ import "github.com/timickb/go-stateflow/internal/domain"
 func (d *StateDiagram) ToDomain() *domain.Scenario {
 	return &domain.Scenario{
 		Name:        d.Name,
+		Version:     d.Version,
 		States:      d.States.States,
 		Transitions: d.Transitions.Transitions,
 	}

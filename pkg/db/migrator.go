@@ -10,6 +10,7 @@ import (
 	"io/fs"
 )
 
+// Migrator Сущность для осуществления миграций.
 type Migrator struct {
 	path string
 	fSys fs.FS
@@ -22,6 +23,7 @@ func NewMigrator(path string, fSys fs.FS) *Migrator {
 	}
 }
 
+// Migrate Применить все миграции к БД.
 func (m *Migrator) Migrate(db *sql.DB, dbName string) error {
 	p, err := postgres.WithInstance(db, &postgres.Config{
 		MigrationsTable: "_migrations",

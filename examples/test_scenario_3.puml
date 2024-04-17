@@ -1,0 +1,26 @@
+@startuml
+
+!$name = "test_scenario_3"
+!$version = "1.0"
+
+hide empty description
+
+title Создание платежа
+
+state FetchOrderInfo: order_service.fetch_order(order_id = "123")
+state CreateInvoice: payment_service.create_invoice
+state SendSuccessEmail: notification_service.send_email(data = ctx.success_email)
+state SendFailEmail: notification_service.send_email(data = ctx.fail_email)
+
+[*] --> FetchOrderInfo
+FetchOrderInfo --> CreateInvoice
+FetchOrderInfo --> SendFailEmail: [handler_fail]
+
+CreateInvoice --> SendSuccessEmail
+CreateInvoice --> SendFailEmail: [handler_fail]
+CreateInvoice --> SendFailEmail: [not_enough_money]
+
+SendSuccessEmail --> [*]
+SendFailEmail --> [*]
+
+@enduml

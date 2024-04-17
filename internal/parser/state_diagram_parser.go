@@ -72,10 +72,18 @@ func (d *StateDiagram) AddTransition(dto *AddTransitionDto) {
 	}
 
 	if stateFrom == nil {
-		panic(fmt.Sprintf("stateFrom %s doesn't declared in the scenario", dto.StateFrom))
+		if dto.StateFrom == domain.StateStart.Name {
+			stateFrom = domain.StateStart
+		} else {
+			panic(fmt.Sprintf("stateFrom %s doesn't declared in the scenario", dto.StateFrom))
+		}
 	}
 	if stateTo == nil {
-		panic(fmt.Sprintf("stateTo %s doesn't declared in the scenario", dto.StateTo))
+		if dto.StateTo == domain.StateEnd.Name {
+			stateTo = domain.StateEnd
+		} else {
+			panic(fmt.Sprintf("stateTo %s doesn't declared in the scenario", dto.StateTo))
+		}
 	}
 
 	d.Transitions.Transitions = append(d.Transitions.Transitions, &domain.Transition{
@@ -111,6 +119,10 @@ func (d *StateDiagram) appendParam() {
 			FromContext: true,
 		}
 	}
+}
+
+func (d *StateDiagram) setName(name string) {
+	d.Name = name
 }
 
 func (d *StateDiagram) setVersion(version string) {

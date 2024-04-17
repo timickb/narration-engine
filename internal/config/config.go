@@ -13,6 +13,7 @@ type Config struct {
 	Database *db.PostgresConfig `json:"database" yaml:"database"`
 }
 
+// NewFromFile Создать конфиг из YAML файла.
 func NewFromFile(path string) (*Config, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {

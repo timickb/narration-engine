@@ -1,0 +1,22 @@
+@startuml
+
+!$name = "test_scenario_2"
+!$version = "1.0"
+
+hide empty description
+
+title Тестовый сценарий: ветвление по событиям
+
+state FetchSomething: service1.fetch_something
+state SomethingIsGood: service2.do_if_good
+state SendNotification: service2.send_notification
+state SomethingIsBad: service2.do_if_bad
+
+[*] --> FetchSomething
+FetchSomething --> SomethingIsGood: [yes]
+FetchSomething --> SomethingIsBad: [no]
+SomethingIsGood --> SendNotification
+SendNotification --> [*]
+SomethingIsBad --> [*]: [something_performed]
+
+@enduml

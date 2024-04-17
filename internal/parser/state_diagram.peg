@@ -37,7 +37,7 @@ Tag <- '<<' < identifier > '>>' { p.AddTag(text) }
 Duration <- < [0-9]+ ('s' / 'm' / 'h' / 'd') >
 
 Title <- 'title' SP < anySequence > NL { p.Title = text }
-Name <- '!$name' SP '=' SP '"' < anySequence > '"' NL { p.Name = text }
+Name <- '!$name' SP '=' SP '"' < identifier > '"' NL { p.setName(text) }
 Version <- '!$version' SP '=' SP '"'? < [0-9]+.[0-9]+ > '"'? NL { p.setVersion(text) }
 HideEmptyDescription <- 'hide empty description' NL
 Theme <- '!theme' SP anySequence SP NL
@@ -61,8 +61,8 @@ BackArrow <- ( BackArr / DoubleBackArr / TripleBackArr / DirectionBackArr )
 Direction <- ('up' / 'down' / 'right' / 'left' / 'l' / 'r' / 'u' / 'd')
 
 TerminalState <- '[*]'
-StateFrom <- ( TermState { p.stateFrom = "START" } / Word { p.stateFrom = p.word } )
-StateTo <- ( TermState { p.stateTo = "END" } / Word { p.stateTo = p.word } )
+StateFrom <- ( TerminalState { p.stateFrom = "START" } / Word { p.stateFrom = p.word } )
+StateTo <- ( TerminalState { p.stateTo = "END" } / Word { p.stateTo = p.word } )
 StateName <- Word { p.stateName = p.word }
 Delay <- 'delay=' Duration { p.delay = text }
 
@@ -73,10 +73,12 @@ ParamValueFromContext <- SP '=' SP < contextVarPath > { p.contextVarPath = text 
 Param <- ParamName (ParamValueFromContext / ParamValue)? { p.appendParam() }
 
 HandlerName <- < (identifier '.')? identifier > { p.handlerName = text }
+HandlerParams <- '(' (Param)* ')'
+Handler <- HandlerName (HandlerParams)?
 
 EventName <- '[' < identifier > ']' { p.eventName = text}
 
-State <- 'state' SP StateName SP (tag SP?)* SP (':' SP (Delay / Handler))? NL
+State <- 'state' SP StateName SP (Tag SP?)* SP (':' SP (Delay / Handler))? NL
     {
         dto := &AddStateDto {
             StateName: p.stateName,
@@ -86,7 +88,7 @@ State <- 'state' SP StateName SP (tag SP?)* SP (':' SP (Delay / Handler))? NL
         p.AddState(dto);
         p.clearState()
     }
-Transition <- (StateFrom SP Arrow SP StateTo / StateTo SP BackArrow SP StateFrom ) SP (':' sp EventName)? NL
+Transition <- (StateFrom SP Arrow SP StateTo / StateTo SP BackArrow SP StateFrom ) SP (':' SP EventName)? NL
     {
         dto := &AddTransitionDto {
             StateFrom: p.stateFrom,

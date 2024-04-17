@@ -12,3 +12,15 @@ type StateParamValue struct {
 	Value       string
 	FromContext bool
 }
+
+var (
+	// StateStart Терминальное состояние в начале сценария.
+	StateStart = &State{
+		Name: "START",
+	}
+
+	// StateEnd Терминальное состояние в конце сценария.
+	StateEnd = &State{
+		Name: "END",
+	}
+)

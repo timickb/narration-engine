@@ -6,16 +6,16 @@ import (
 	"fmt"
 	"github.com/timickb/go-stateflow/internal/builder"
 	"github.com/timickb/go-stateflow/internal/config"
-	"github.com/timickb/go-stateflow/pkg"
+	"github.com/timickb/go-stateflow/pkg/utils"
 	"log"
 )
 
 func main() {
 	configPath := flag.String("cfg", "config.yaml", "config file")
-	if pkg.IsStrNilOrEmpty(configPath) {
+	if utils.IsStrNilOrEmpty(configPath) {
 		log.Fatal("empty config path")
 	}
-	if pkg.IsStrNilOrEmpty(configPath) {
+	if utils.IsStrNilOrEmpty(configPath) {
 		log.Fatal("empty config path")
 	}
 

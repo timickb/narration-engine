@@ -19,6 +19,7 @@ type PostgresConfig struct {
 	Secondaries        []*PostgresConfig `json:"secondaries" yaml:"secondaries"`
 }
 
+// DSNString Сформировать строку для подключения к БД.
 func (c *PostgresConfig) DSNString() string {
 	return fmt.Sprintf(
 		"host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
@@ -26,6 +27,7 @@ func (c *PostgresConfig) DSNString() string {
 	)
 }
 
+// Validate Валидировать конфигурацию.
 func (c *PostgresConfig) Validate() error {
 	if c.Host == "" {
 		return errors.New("empty database host")

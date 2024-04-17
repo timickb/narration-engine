@@ -10,10 +10,12 @@ type transactor struct {
 	db *Database
 }
 
+// NewTransactor Создать сущность для запуска gorm транзакций.
 func NewTransactor(db *Database) *transactor {
 	return &transactor{db: db}
 }
 
+// Transaction Начать gorm транзакцию.
 func (t *transactor) Transaction(ctx context.Context, fn func(ctx context.Context) error) error {
 	db := fetchDbFromCtx(ctx)
 	if db != nil {
