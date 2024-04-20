@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"github.com/stretchr/testify/assert"
 	"github.com/timickb/go-stateflow/internal/domain"
 	"reflect"
 	"testing"
@@ -163,7 +164,7 @@ func TestParse(t *testing.T) {
 				t.Errorf("Parse() want err = %v, got err = %v", tc.wantErr, err)
 			}
 
-			reflect.DeepEqual(tc.want, actual)
+			assert.True(t, reflect.DeepEqual(tc.want, actual))
 		})
 	}
 }

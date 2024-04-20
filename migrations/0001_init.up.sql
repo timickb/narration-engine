@@ -8,12 +8,15 @@ create table instances (
     current_state       text not null,
     previous_state      text not null,
     context             jsonb not null,
-    blocking_key        text not null,
+    blocking_key        text,
     retries             integer not null,
     failed              boolean not null,
 
     created_at          timestamptz not null default now(),
-    updated_at          timestamptz not null default now()
+    updated_at          timestamptz not null default now(),
+
+    constraint instance_instances_fk
+        foreign key(parent_id) references instances(id)
 );
 
 -- История переходов между состояниями экземпляров
@@ -40,6 +43,7 @@ create table pending_events (
     instance_id          uuid not null,
     event_name           text not null,
     params               jsonb not null,
+    external             bool not null,
     created_at           timestamptz not null default now(),
     executed_at          timestamptz
 );

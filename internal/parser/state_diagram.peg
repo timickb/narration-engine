@@ -73,7 +73,7 @@ ParamValueFromContext <- SP '=' SP < contextVarPath > { p.contextVarPath = text 
 Param <- ParamName (ParamValueFromContext / ParamValue)? { p.appendParam() }
 
 HandlerName <- < (identifier '.')? identifier > { p.handlerName = text }
-HandlerParams <- '(' (Param)* ')'
+HandlerParams <- '(' (Param (',' SP Param)*)?  ')'
 Handler <- HandlerName (HandlerParams)?
 
 EventName <- '[' < identifier > ']' { p.eventName = text}

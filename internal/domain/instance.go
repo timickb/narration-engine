@@ -7,15 +7,21 @@ import (
 
 // Instance Модель экземпляра сценария.
 type Instance struct {
-	Id           uuid.UUID
-	ScenarioName string
-
-	CurrentState *State
+	Id            uuid.UUID `json:"id"`
+	Scenario      *Scenario `json:"scenario"`
+	CurrentState  *State    `json:"current_state"`
+	PreviousState *State    `json:"previous_state"`
+	Context       string    `json:"context"`
+	Retries       int       `json:"retries"`
+	Failed        bool      `json:"failed"`
 
 	// BlockingKey Ключ сущности, по которой блокируется экземпляр. Пока он присутствует,
 	// не могут создаваться другие экземпляры с таким же ключом.
-	BlockingKey *string
+	BlockingKey *string `json:"blocking_key,omitempty"`
 
-	CreatedAt        time.Time
-	LastTransitionAt time.Time
+	// PendingEvents Очередь ожидающих обработки событий
+	PendingEvents *EventsQueue `json:"pending_events"`
+
+	CreatedAt        time.Time  `json:"created_at"`
+	LastTransitionAt *time.Time `json:"last_transition_at"`
 }

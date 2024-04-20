@@ -47,6 +47,10 @@ var (
 				Value:       "123",
 				FromContext: false,
 			},
+			"user_id": {
+				Value:       "456",
+				FromContext: false,
+			},
 		},
 	}
 	testState3CreateInvoice = &domain.State{
