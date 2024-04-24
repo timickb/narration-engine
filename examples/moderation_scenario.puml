@@ -1,0 +1,45 @@
+@startuml
+
+!$name = "test_scenario_3"
+!$version = "1.0"
+
+hide empty description
+
+title Модерация публикаций в блоге
+
+state ОбновитьСтатусПубликацииНаReview: blogs.updatePublication(status="REVIEW")
+state ОбновитьСтатусПубликацииНаPending: blogs.updatePublication(status="PENDING")
+state ОбновитьСтатусПубликацииНаApproved: blogs.updatePublication(status="APPROVED")
+state ОбновитьСтатусПубликацииНаDeclined: blogs.updatePublication(status="DECLINED")
+
+state ОтправитьУведомлениеМодератору: notifications.sendMessage(data="moderator_message_data")
+
+state ОжиданиеОтветаМодератора
+state ОжиданиеПравокОтПользователя
+
+state УведомитьПользователяОбУспехе: notifications.sendMessage(data="user_success_data")
+state УведомитьПользователяОбОтказе: notifications.sendMessage(data="user_decline_data")
+state УведомитьПользователяОДоработках: notifications.sendMessage(data="user_rework_data")
+
+state ПостОбработкаПубликации: worker.newTask(type="PUBLICATION_POSTPROCESS")
+
+[*] --> ОбновитьСтатусПубликацииНаReview
+ОбновитьСтатусПубликацииНаReview --> ОтправитьУведомлениеМодератору
+ОтправитьУведомлениеМодератору --> ОжиданиеОтветаМодератора
+
+ОжиданиеОтветаМодератора ---> ОбновитьСтатусПубликацииНаApproved: [approve]
+ОжиданиеОтветаМодератора --> ОбновитьСтатусПубликацииНаDeclined: [reject]
+ОжиданиеОтветаМодератора --> ОбновитьСтатусПубликацииНаPending: [rework]
+
+ОбновитьСтатусПубликацииНаApproved --> ПостОбработкаПубликации
+ОбновитьСтатусПубликацииНаDeclined --> УведомитьПользователяОбОтказе
+ОбновитьСтатусПубликацииНаPending --> УведомитьПользователяОДоработках
+УведомитьПользователяОДоработках --> ОжиданиеПравокОтПользователя
+
+ОжиданиеПравокОтПользователя ---> ОбновитьСтатусПубликацииНаReview
+
+ПостОбработкаПубликации --> УведомитьПользователяОбУспехе
+
+УведомитьПользователяОбУспехе --> [*]
+УведомитьПользователяОбОтказе --> [*]
+@enduml
