@@ -12,6 +12,11 @@ state ОбновитьСтатусПубликацииНаPending: blogs.updateP
 state ОбновитьСтатусПубликацииНаApproved: blogs.updatePublication(status="APPROVED")
 state ОбновитьСтатусПубликацииНаDeclined: blogs.updatePublication(status="DECLINED")
 
+state ОбновитьСтатусПубликацииНаReview: retry=1m,5m,10m,15m,1d
+state ОбновитьСтатусПубликацииНаPending: retry=1m,5m,10m,15m,1d
+state ОбновитьСтатусПубликацииНаApproved: retry=1m,5m,10m,15m,1d
+state ОбновитьСтатусПубликацииНаDeclined: retry=1m,5m,10m,15m,1d
+
 state ОтправитьУведомлениеМодератору: notifications.sendMessage(data="moderator_message_data")
 
 state ОжиданиеОтветаМодератора
@@ -22,6 +27,7 @@ state УведомитьПользователяОбОтказе: notifications.
 state УведомитьПользователяОДоработках: notifications.sendMessage(data="user_rework_data")
 
 state ПостОбработкаПубликации: worker.newTask(type="PUBLICATION_POSTPROCESS")
+state ПостОбработкаПубликации: retry=1m,5m,10m,15m,1d
 
 [*] --> ОбновитьСтатусПубликацииНаReview
 ОбновитьСтатусПубликацииНаReview --> ОтправитьУведомлениеМодератору
