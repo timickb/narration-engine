@@ -2,7 +2,7 @@ package parser
 
 import (
 	"github.com/stretchr/testify/assert"
-	"github.com/timickb/go-stateflow/internal/domain"
+	"github.com/timickb/narration-engine/internal/domain"
 	"reflect"
 	"testing"
 )
@@ -151,6 +151,11 @@ func TestParse(t *testing.T) {
 			name:     "success scenario with branches and params",
 			filePath: "../../examples/test_scenario_3.puml",
 			want:     want3,
+			wantErr:  false,
+		},
+		{
+			name:     "publication moderation scenario",
+			filePath: "../../examples/moderation_scenario.puml",
 			wantErr:  false,
 		},
 	}

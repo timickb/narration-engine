@@ -15,6 +15,9 @@ type Instance struct {
 	Retries       int       `json:"retries"`
 	Failed        bool      `json:"failed"`
 
+	LockedBy   *string    `json:"locked_by,omitempty"`
+	LockedTill *time.Time `json:"locked_till,omitempty"`
+
 	// BlockingKey Ключ сущности, по которой блокируется экземпляр. Пока он присутствует,
 	// не могут создаваться другие экземпляры с таким же ключом.
 	BlockingKey *string `json:"blocking_key,omitempty"`

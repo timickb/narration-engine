@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package schema.v1;
+
+option go_package = "github.com/timickb/narration-engine/proto/gen/stateflow;stateflow";
+
+// Status - статус ответа.
+message Status {
+  // Error - структура ошибки.
+  message Error {
+    // code - код ошибки.
+    int32 code = 1;
+    // message - текст ошибки.
+    string message = 2;
+  }
+
+  // error - ошибка.
+  Error error = 1;
+}
+
+// State - состояние экземпляра
+message State {
+  // current_name - название текущего состояния
+  string current_name = 1;
+  // previous_name - название предыдущего состояния.
+  string previous_name = 2;
+  // last_event - по какому событию произошел переход в текущее состояние из предыдущего.
+  string last_event = 3;
+  // context - текущее состояние контекста экземпляра (json)
+  string context = 4;
+}

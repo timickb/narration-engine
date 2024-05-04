@@ -1,6 +1,6 @@
 package parser
 
-import "github.com/timickb/go-stateflow/internal/domain"
+import "github.com/timickb/narration-engine/internal/domain"
 
 // ToDomain - отобразить сценарий в доменную сущность.
 func (d *StateDiagram) ToDomain() *domain.Scenario {

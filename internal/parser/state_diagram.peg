@@ -9,6 +9,7 @@ type StateDiagram Peg {
     Name string
     Title string
     Version string
+    RetryLabels map[string]string
 
     word string
     tags []string
@@ -21,10 +22,15 @@ type StateDiagram Peg {
     paramName string
     paramValue string
     contextVarPath string
+
     delay string
+    retryLabelName string
+    retryLabelValue string
+    retryParams string
+    retryAssignLabel string
 }
 
-StateDiagram <- Start (Version / Name / Transition / Title / StateSkin / State / HideEmptyDescription / Theme / Skinparam / Var / Comment)* End !.
+StateDiagram <- Start (Version / Name / Transition / Title / StateSkin / State / RetryLabel / HideEmptyDescription / Theme / Skinparam / Var / Comment)* End !.
 
 identifier <- [a-zA-Z0-9_]+
 anyChar <- [^\r\n :-><\t/]
@@ -66,6 +72,13 @@ StateTo <- ( TerminalState { p.stateTo = "END" } / Word { p.stateTo = p.word } )
 StateName <- Word { p.stateName = p.word }
 Delay <- 'delay=' Duration { p.delay = text }
 
+RetryLabel <- RetryLabelName SP '=' SP '"' < RetryLabelValue > '"' NL { p.AddRetryLabel(p.retryLabelName, p.retryLabelValue) }
+RetryLabelName <- '!$retry_' < identifier > { p.retryLabelName = text }
+RetryLabelValue <- RetryParams { p.retryLabelValue = text }
+Retry <- 'retry=' < (RetryParams / RetryAssignLabel) > NL?
+RetryAssignLabel <- < identifier > { p.retryAssignLabel = text }
+RetryParams <- < ([0-9]+[smhd]?[:])?([0-9]+[smhd])([,][0-9]+[smhd])+([,][\\.][\\.][\\.])? > { p.retryParams = text }
+
 contextVarPath <- 'ctx' ('.' identifier)+
 ParamName <- < identifier > { p.paramName = text }
 ParamValue <- SP '=' SP '"' < [^"]+ > '"' { p.paramValue = text }
@@ -78,7 +91,7 @@ Handler <- HandlerName (HandlerParams)?
 
 EventName <- '[' < identifier > ']' { p.eventName = text}
 
-State <- 'state' SP StateName SP (Tag SP?)* SP (':' SP (Delay / Handler))? NL
+State <- 'state' SP StateName SP (Tag SP?)* SP (':' SP (Delay / Retry / Delay SP Retry / Retry SP Delay / Handler))? NL
     {
         dto := &AddStateDto {
             StateName: p.stateName,

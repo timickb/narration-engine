@@ -3,46 +3,63 @@ package builder
 import (
 	"context"
 	"fmt"
-	"github.com/timickb/go-stateflow/internal/config"
-	"github.com/timickb/go-stateflow/internal/controller"
-	"github.com/timickb/go-stateflow/internal/domain"
-	"github.com/timickb/go-stateflow/internal/usecase"
-	"github.com/timickb/go-stateflow/migrations"
-	"github.com/timickb/go-stateflow/pkg/db"
-	schema "github.com/timickb/go-stateflow/schema/v1/gen"
+	"github.com/google/uuid"
+	log "github.com/sirupsen/logrus"
+	"github.com/timickb/narration-engine/internal/adapter/handler"
+	"github.com/timickb/narration-engine/internal/config"
+	"github.com/timickb/narration-engine/internal/controller"
+	"github.com/timickb/narration-engine/internal/domain"
+	"github.com/timickb/narration-engine/internal/repository"
+	"github.com/timickb/narration-engine/internal/usecase"
+	"github.com/timickb/narration-engine/internal/worker"
+	"github.com/timickb/narration-engine/migrations"
+	"github.com/timickb/narration-engine/pkg/db"
+	schema "github.com/timickb/narration-engine/schema/v1/gen"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
 	"net"
 )
 
 // Builder DI контейнер приложения.
 type Builder struct {
-	ctx      context.Context
-	cfg      *config.Config
-	db       *db.Database
-	listener net.Listener
-	srv      *grpc.Server
-	usecase  domain.Usecase
+	ctx           context.Context
+	cfg           *config.Config
+	log           *log.Logger
+	db            *db.Database
+	listener      net.Listener
+	srv           *grpc.Server
+	usecase       domain.Usecase
+	runner        *worker.InstanceRunner
+	handlers      map[string]*handler.Handler
+	handlersConns []*grpc.ClientConn
 }
 
 func New(ctx context.Context, cfg *config.Config) (*Builder, error) {
 	b := &Builder{ctx: ctx, cfg: cfg}
+	b.log = log.WithContext(ctx).Logger
 
 	if err := b.initDatabase(); err != nil {
 		return nil, fmt.Errorf("init database: %w", err)
 	}
-	if err := b.buildUsecase(); err != nil {
-		return nil, fmt.Errorf("build usecase: %w", err)
-	}
+	b.buildUsecase()
 	if err := b.buildGrpcServer(); err != nil {
 		return nil, fmt.Errorf("build grpc server: %w", err)
 	}
+	if err := b.buildExternalHandlers(); err != nil {
+		return nil, fmt.Errorf("build workers clients: %w", err)
+	}
+	b.buildInstanceRunner()
 
 	return b, nil
 }
 
 func (b *Builder) ServeGrpc() error {
 	return b.srv.Serve(b.listener)
+}
+
+func (b *Builder) StartInstanceRunner(ctx context.Context) {
+	b.runner.Start(ctx)
 }
 
 func (b *Builder) ServerPort() int {
@@ -70,6 +87,12 @@ func (b *Builder) initDatabase() error {
 	return nil
 }
 
+func (b *Builder) buildInstanceRunner() {
+	instanceChan := make(chan uuid.UUID)
+	instanceRepo := repository.NewInstanceRepo(b.db)
+	b.runner = worker.NewInstanceRunner(b.cfg, b.cfg, instanceRepo, instanceChan)
+}
+
 func (b *Builder) buildGrpcServer() error {
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", b.cfg.GrpcPort))
 	if err != nil {
@@ -85,8 +108,35 @@ func (b *Builder) buildGrpcServer() error {
 	return nil
 }
 
-func (b *Builder) buildUsecase() error {
-	// TODO: implement
-	b.usecase = usecase.New(nil, nil)
+func (b *Builder) buildUsecase() {
+	instanceRepo := repository.NewInstanceRepo(b.db)
+	eventRepo := repository.NewPendingEventRepo(b.db)
+	b.usecase = usecase.New(instanceRepo, eventRepo, b.cfg)
+}
+
+func (b *Builder) buildExternalHandlers() error {
+	b.handlers = make(map[string]*handler.Handler)
+
+	for name, conf := range b.cfg.Handlers {
+		addr := fmt.Sprintf("%s:%d", conf.Host, conf.Port)
+		conn, err := grpc.DialContext(b.ctx, addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		if err != nil {
+			return err
+		}
+		b.handlers[name] = handler.NewHandlerClient(
+			schema.NewWorkerServiceClient(conn),
+			name,
+		)
+	}
+
+	return nil
+}
+
+func (b *Builder) GracefulStop() error {
+	for _, conn := range b.handlersConns {
+		if err := conn.Close(); err != nil {
+			b.log.Errorf(err.Error())
+		}
+	}
 	return nil
 }

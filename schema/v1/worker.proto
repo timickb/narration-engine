@@ -1,0 +1,34 @@
+syntax = "proto3";
+import "types.proto";
+
+package schema.v1;
+
+option go_package = "github.com/timickb/narration-engine/proto/gen/stateflow;stateflow";
+
+// Worker - программный интерфейс, реализуемый сторонними сервисами-обработчиками.
+service WorkerService {
+  // Handle - вызов обработчика состояния.
+  rpc Handle(HandleRequest) returns (HandleResponse);
+}
+
+// HandleRequest - структура с входными данными для обработчика.
+message HandleRequest {
+  // instance_id - идентификатор экземпляра.
+  string instance_id = 1;
+  // context - данные экземпляра (json)
+  string context = 2;
+  // state - название соответствующего состояния.
+  string state = 3;
+}
+
+// HandleResponse - структура с результатом работы обработчика.
+message HandleResponse {
+  // status - статус ответа.
+  Status status = 1;
+  // next_event - следующее событие
+  string next_event = 2;
+  // next_event_payload - данные для следующего события (json).
+  string next_event_payload = 3;
+  // data_to_context - данные для сохранения в контексте экземпляра.
+  string data_to_context = 4;
+}

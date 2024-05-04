@@ -3,6 +3,6 @@ package domain
 // EventPushDto Запрос постановки события в очередь.
 type EventPushDto struct {
 	EventName string
-	Params    interface{}
+	Params    string
 	External  bool
 }

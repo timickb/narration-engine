@@ -1,4 +1,5 @@
 grpc_port: 2140
+scenarios_path: ../scenarios
 database:
   host: localhost
   user: go-stateflow
@@ -9,3 +10,16 @@ database:
   max_open_connections: 20
   max_idle_connections: 20
   auto_migrate: true
+handlers:
+  notifications:
+    host: localhost
+    port: 5001
+  orders:
+    host: localhost
+    port: 5002
+async_worker:
+  count: 3
+  instances_batch_size: 30
+  instance_fetching_interval: 3s
+  instance_lock_timeout: 20s
+  locker_id: 'main_node'

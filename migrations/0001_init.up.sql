@@ -9,6 +9,8 @@ create table instances (
     previous_state      text not null,
     context             jsonb not null,
     blocking_key        text,
+    locked_by           text,
+    locked_till         timestamptz,
     retries             integer not null,
     failed              boolean not null,
 

@@ -1,22 +1,34 @@
 package usecase
 
-import "github.com/timickb/go-stateflow/internal/domain"
+import (
+	"context"
+	"github.com/google/uuid"
+	"github.com/timickb/narration-engine/internal/domain"
+)
 
-type InstanceRunner interface {
+type InstanceRepository interface {
+	GetById(ctx context.Context, id uuid.UUID) (*domain.Instance, error)
+	Create(ctx context.Context, dto *domain.CreateInstanceDto) (uuid.UUID, error)
 }
 
-type StateDiagramParser interface {
-	Parse(filePath string) (*domain.Scenario, error)
+type PendingEventRepository interface {
+	Create(ctx context.Context, dto *domain.CreatePendingEventDto) (uuid.UUID, error)
+}
+
+type Config interface {
+	GetLoadedScenario(name string, version string) (*domain.Scenario, error)
 }
 
 type Usecase struct {
-	instanceRunner InstanceRunner
-	scenarioParser StateDiagramParser
+	instanceRepo InstanceRepository
+	eventRepo    PendingEventRepository
+	config       Config
 }
 
-func New(runner InstanceRunner, parser StateDiagramParser) *Usecase {
+func New(instanceRepo InstanceRepository, eventRepo PendingEventRepository, config Config) *Usecase {
 	return &Usecase{
-		instanceRunner: runner,
-		scenarioParser: parser,
+		instanceRepo: instanceRepo,
+		eventRepo:    eventRepo,
+		config:       config,
 	}
 }

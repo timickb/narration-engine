@@ -22,7 +22,7 @@ func (t *transactor) Transaction(ctx context.Context, fn func(ctx context.Contex
 		return errors.New("transaction is already started")
 	}
 
-	return t.db.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		return fn(putDbToCtx(ctx, &Database{db: tx}))
+	return t.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		return fn(putDbToCtx(ctx, &Database{tx}))
 	})
 }

@@ -4,7 +4,13 @@ import "time"
 
 // InstanceRunnerConfig Конфигурация для InstanceRunner.
 type InstanceRunnerConfig interface {
-	InstancesBatchSize() int
-	InstanceFetchingInterval() time.Duration
-	AsyncWorkersCount() int
+	GetInstancesBatchSize() int
+	GetInstanceFetchingInterval() time.Duration
+	GetAsyncWorkersCount() int
+}
+
+// AsyncWorkerConfig Конфигурация для AsyncWorker.
+type AsyncWorkerConfig interface {
+	GetInstanceLockTimeout() time.Duration
+	GetLockerId() string
 }

@@ -1,8 +1,9 @@
 syntax = "proto3";
+import "types.proto";
 
 package schema.v1;
 
-option go_package = "github.com/timickb/stateflow/proto/gen/stateflow;stateflow";
+option go_package = "github.com/timickb/narration-engine/proto/gen/stateflow;stateflow";
 
 // Stateflow - сервис конечных автоматов.
 service StateflowService {
@@ -12,12 +13,6 @@ service StateflowService {
   rpc SendEvent(SendEventRequest) returns (SendEventResponse);
   // GetState - получить информацию о состоянии экземпляра сценария.
   rpc GetState(GetStateRequest) returns (GetStateResponse);
-}
-
-// Worker - программный интерфейс, реализуемый сторонними сервисами-обработчиками.
-service WorkerService {
-  // Handle - вызов обработчика состояния.
-  rpc Handle(HandleRequest) returns (HandleResponse);
 }
 
 // StartRequest - запрос запуска экземпляра сценария
@@ -32,6 +27,7 @@ message StartRequest {
   string context = 4;
 }
 
+// StartResponse - ответ на запрос запуска экземпляра сценария.
 message StartResponse {
   // status - статус ответа.
   Status status = 1;
@@ -73,50 +69,4 @@ message GetStateResponse {
   Status status = 1;
   // state - состояние экземпляра.
   State state = 2;
-}
-
-message HandleRequest {
-  // instance_id - идентификатор экземпляра.
-  string instance_id = 1;
-  // context - данные экземпляра (json)
-  string context = 2;
-  // state - название соответствующего состояния.
-  string state = 3;
-}
-
-message HandleResponse {
-  // status - статус ответа.
-  Status status = 1;
-  // next_event - следующее событие
-  string next_event = 2;
-  // next_event_payload - данные для следующего события (json).
-  string next_event_payload = 3;
-  // data_to_context - данные для сохранения в контексте экземпляра.
-  string data_to_context = 4;
-}
-
-// Status - статус ответа.
-message Status {
-  // Error - структура ошибки.
-  message Error {
-    // code - код ошибки.
-    int32 code = 1;
-    // message - текст ошибки.
-    string message = 2;
-  }
-
-  // error - ошибка.
-  Error error = 1;
-}
-
-// State - состояние экземпляра
-message State {
-  // current_name - название текущего состояния
-  string current_name = 1;
-  // previous_name - название предыдущего состояния.
-  string previous_name = 2;
-  // last_event - по какому событию произошел переход в текущее состояние из предыдущего.
-  string last_event = 3;
-  // context - текущее состояние контекста экземпляра (json)
-  string context = 4;
 }

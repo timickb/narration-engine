@@ -1,8 +1,8 @@
 package controller
 
 import (
-	"github.com/timickb/go-stateflow/internal/domain"
-	schema "github.com/timickb/go-stateflow/schema/v1/gen"
+	"github.com/timickb/narration-engine/internal/domain"
+	schema "github.com/timickb/narration-engine/schema/v1/gen"
 )
 
 type grpcController struct {

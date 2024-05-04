@@ -6,23 +6,39 @@ import (
 	"fmt"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
+	"log"
+	"os"
+	"time"
 )
 
 type dbKey struct{}
 
 // Database Обертка над gorm.DB
 type Database struct {
-	db *gorm.DB
+	*gorm.DB
 }
 
 // CreatePostgresConnection Установить соединение с PostgreSQL и создать инстанс Database.
 func CreatePostgresConnection(ctx context.Context, cfg *PostgresConfig) (*Database, error) {
-	db, err := gorm.Open(postgres.Open(cfg.DSNString()))
+	gormLogger := logger.New(
+		log.New(os.Stdout, "\r\n", log.LstdFlags),
+		logger.Config{
+			SlowThreshold:             time.Second,
+			LogLevel:                  logger.Silent,
+			IgnoreRecordNotFoundError: true,
+			ParameterizedQueries:      true,
+			Colorful:                  true,
+		},
+	)
+	db, err := gorm.Open(
+		postgres.Open(cfg.DSNString()),
+		&gorm.Config{Logger: gormLogger},
+	)
 	if err != nil {
 		return nil, fmt.Errorf("open postgres connection: %w", err)
 	}
 
-	// TODO: custom logger
 	// TODO: configure secondaries
 
 	sqlDb, err := db.DB()
@@ -33,7 +49,7 @@ func CreatePostgresConnection(ctx context.Context, cfg *PostgresConfig) (*Databa
 	sqlDb.SetMaxIdleConns(cfg.MaxIdleConnections)
 	sqlDb.SetMaxOpenConns(cfg.MaxOpenConnections)
 
-	return &Database{db: db}, nil
+	return &Database{db}, nil
 }
 
 // WithTxSupport Инстанс БД в контексте запущенной транзакции.
@@ -47,7 +63,7 @@ func (d *Database) WithTxSupport(ctx context.Context) *Database {
 
 // SqlDB Получить инстанс sql.DB
 func (d *Database) SqlDB() (*sql.DB, error) {
-	return d.db.DB()
+	return d.DB.DB()
 }
 
 func fetchDbFromCtx(ctx context.Context) *Database {

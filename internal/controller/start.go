@@ -3,7 +3,7 @@ package controller
 import (
 	"context"
 	"fmt"
-	schema "github.com/timickb/go-stateflow/schema/v1/gen"
+	schema "github.com/timickb/narration-engine/schema/v1/gen"
 )
 
 // Start - создать и запустить экземпляр сценария.

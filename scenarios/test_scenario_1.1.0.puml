@@ -1,0 +1,19 @@
+@startuml
+
+!$name = "test_scenario_1"
+!$version = "1.0"
+
+hide empty description
+
+title Тестовый сценарий: простейший пример
+
+state Состояние1: service.worker1
+state Состояние2: service.worker2
+state Состояние3
+
+[*] --> Состояние1
+Состояние1 --> Состояние2
+Состояние2 --> Состояние3
+Состояние3 --> [*]
+
+@enduml

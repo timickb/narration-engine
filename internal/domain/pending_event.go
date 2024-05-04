@@ -12,7 +12,7 @@ type PendingEvent struct {
 	// EventName Имя события.
 	EventName string
 	// EventParams Параметры события.
-	EventParams interface{}
+	EventParams string
 	// External Пришло ли событие из API (метод SendEvent)
 	External bool
 

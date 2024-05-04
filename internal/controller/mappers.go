@@ -3,8 +3,8 @@ package controller
 import (
 	"fmt"
 	"github.com/google/uuid"
-	"github.com/timickb/go-stateflow/internal/domain"
-	schema "github.com/timickb/go-stateflow/schema/v1/gen"
+	"github.com/timickb/narration-engine/internal/domain"
+	schema "github.com/timickb/narration-engine/schema/v1/gen"
 )
 
 func MapStartRequestToDomain(src *schema.StartRequest) *domain.ScenarioStartDto {
@@ -29,7 +29,11 @@ func MapSendEventRequestToDomain(src *schema.SendEventRequest) (*domain.EventSen
 	}, nil
 }
 
-func MapStateToPb(src *domain.State) *schema.State {
-	// TODO
-	return &schema.State{}
+func MapInstanceToPbState(src *domain.Instance) *schema.State {
+	return &schema.State{
+		CurrentName:  src.CurrentState.Name,
+		PreviousName: src.PreviousState.Name,
+		LastEvent:    "",
+		Context:      src.Context,
+	}
 }

@@ -2,7 +2,7 @@ package parser
 
 import (
 	"fmt"
-	"github.com/timickb/go-stateflow/internal/domain"
+	"github.com/timickb/narration-engine/internal/domain"
 	"os"
 )
 
@@ -100,6 +100,10 @@ func (d *StateDiagram) AddTag(tag string) {
 		return
 	}
 	d.tags = append(d.tags, tag)
+}
+
+func (d *StateDiagram) AddRetryLabel(name, value string) {
+
 }
 
 func (d *StateDiagram) appendParam() {

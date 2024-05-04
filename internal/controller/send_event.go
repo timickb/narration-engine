@@ -3,7 +3,7 @@ package controller
 import (
 	"context"
 	"fmt"
-	schema "github.com/timickb/go-stateflow/schema/v1/gen"
+	schema "github.com/timickb/narration-engine/schema/v1/gen"
 )
 
 // SendEvent - отправить событие в экземпляр.
@@ -17,7 +17,7 @@ func (c *grpcController) SendEvent(
 		return resp, fmt.Errorf("MapSendEventRequestToDomain: %w", err)
 	}
 
-	if err = c.usecase.SendEvent(ctx, dto); err != nil {
+	if _, err = c.usecase.SendEvent(ctx, dto); err != nil {
 		return resp, fmt.Errorf("usecase.SendEvent: %w", err)
 	}
 

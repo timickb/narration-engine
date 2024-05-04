@@ -1,6 +1,6 @@
 package parser
 
-import "github.com/timickb/go-stateflow/internal/domain"
+import "github.com/timickb/narration-engine/internal/domain"
 
 var (
 	// Состояния для тестового сценария 1
@@ -77,4 +77,7 @@ var (
 			},
 		},
 	}
+
+	// Состояния для тестового сценария модерации публикаций
+
 )
