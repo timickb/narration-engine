@@ -20,6 +20,6 @@ handlers:
 async_worker:
   count: 3
   instances_batch_size: 30
-  instance_fetching_interval: 3s
+  instance_fetching_interval: 5s
   instance_lock_timeout: 20s
   locker_id: 'main_node'

@@ -9,13 +9,13 @@ import (
 
 // DbPendingEvent Репрезентация таблицы pending_events.
 type DbPendingEvent struct {
-	Id         uuid.UUID  `json:"id,omitempty"`
-	InstanceId uuid.UUID  `json:"instance_id,omitempty"`
-	EventName  string     `json:"event_name,omitempty"`
-	Params     string     `gorm:"type:jsonb" json:"params,omitempty"`
-	External   bool       `json:"external,omitempty"`
-	CreatedAt  time.Time  `json:"created_at"`
-	ExecutedAt *time.Time `json:"executed_at,omitempty"`
+	Id         uuid.UUID `json:"id,omitempty"`
+	InstanceId uuid.UUID `json:"instance_id,omitempty"`
+	EventName  string    `json:"event_name,omitempty"`
+	Params     string    `gorm:"type:jsonb" json:"params,omitempty"`
+	External   bool      `json:"external,omitempty"`
+	CreatedAt  time.Time `json:"created_at"`
+	ExecutedAt time.Time `json:"executed_at,omitempty"`
 }
 
 // DbPendingEvents Список репрезентаций таблицы pending_events.
@@ -30,6 +30,18 @@ func NewDbPendingEvent(id uuid.UUID, dto *domain.CreatePendingEventDto) *DbPendi
 		Params:     string(dto.Params),
 		External:   dto.External,
 		CreatedAt:  time.Now(),
+	}
+}
+
+func NewDbPendingEventFromDomain(event *domain.PendingEvent, instanceId uuid.UUID) *DbPendingEvent {
+	return &DbPendingEvent{
+		Id:         event.Id,
+		InstanceId: instanceId,
+		EventName:  event.EventName,
+		Params:     event.EventParams,
+		External:   event.External,
+		CreatedAt:  event.CreatedAt,
+		ExecutedAt: event.ExecutedAt,
 	}
 }
 

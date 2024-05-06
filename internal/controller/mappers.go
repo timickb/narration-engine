@@ -34,6 +34,6 @@ func MapInstanceToPbState(src *domain.Instance) *schema.State {
 		CurrentName:  src.CurrentState.Name,
 		PreviousName: src.PreviousState.Name,
 		LastEvent:    "",
-		Context:      src.Context,
+		Context:      src.Context.String(),
 	}
 }

@@ -3,14 +3,16 @@ package domain
 import (
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/timickb/narration-engine/pkg/utils"
 	"time"
 )
 
 // EventsQueue Очередь событий на обработку.
 type EventsQueue struct {
-	size  int
-	front *PendingEvent
-	back  *PendingEvent
+	size    int
+	front   *PendingEvent
+	back    *PendingEvent
+	shifted map[uuid.UUID]*PendingEvent
 }
 
 // Size Получить текущий размер очереди.
@@ -18,7 +20,7 @@ func (q *EventsQueue) Size() int {
 	return q.size
 }
 
-// Enqueue Положить событие в очередь на обработку.
+// Enqueue Добавить событие в конец очереди.
 func (q *EventsQueue) Enqueue(dto *EventPushDto) error {
 	id, err := uuid.NewUUID()
 	if err != nil {
@@ -30,7 +32,9 @@ func (q *EventsQueue) Enqueue(dto *EventPushDto) error {
 		EventName:   dto.EventName,
 		EventParams: dto.Params,
 		External:    dto.External,
+		FromDb:      dto.FromDb,
 		CreatedAt:   time.Now(),
+		ExecutedAt:  time.Now(),
 	}
 
 	if q.size == 0 {
@@ -45,18 +49,64 @@ func (q *EventsQueue) Enqueue(dto *EventPushDto) error {
 	return nil
 }
 
+// PushToFront Добавить событие в начало очереди (приоритетно).
+func (q *EventsQueue) PushToFront(dto *EventPushDto) error {
+	id, err := uuid.NewUUID()
+	if err != nil {
+		return fmt.Errorf("uuid generate: %w", err)
+	}
+
+	event := &PendingEvent{
+		Id:          id,
+		EventName:   dto.EventName,
+		EventParams: dto.Params,
+		External:    dto.External,
+		CreatedAt:   time.Now(),
+	}
+
+	event.Next = q.front
+	q.front = event
+	q.size++
+
+	return nil
+}
+
 // Dequeue Достать первое событие из очереди и удалить его.
 func (q *EventsQueue) Dequeue() *PendingEvent {
 	if q.size == 0 {
 		return nil
 	}
 	front := q.front
-	front.Next = nil
 	q.front = q.front.Next
+	front.Next = nil
+
+	if q.shifted == nil {
+		q.shifted = make(map[uuid.UUID]*PendingEvent)
+	}
+	q.shifted[front.Id] = front
+	q.size--
+
 	return front
 }
 
 // Front Достать первое событие из очереди.
 func (q *EventsQueue) Front() *PendingEvent {
 	return q.front
+}
+
+// GetShiftedIds Получить идентификаторы убранных из очереди событий.
+func (q *EventsQueue) GetShiftedIds() []uuid.UUID {
+	return utils.MapToKeysSlice(q.shifted)
+}
+
+// GetNewEvents Получить события, которых еще нет в БД.
+func (q *EventsQueue) GetNewEvents() []*PendingEvent {
+	result := make([]*PendingEvent, 0)
+
+	for event := q.front; event != nil; event = event.Next {
+		if !event.FromDb {
+			result = append(result, event)
+		}
+	}
+	return result
 }

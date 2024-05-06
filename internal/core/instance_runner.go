@@ -1,4 +1,4 @@
-package worker
+package core
 
 import (
 	"context"
@@ -8,11 +8,19 @@ import (
 	"time"
 )
 
+// InstanceRunnerConfig Конфигурация для InstanceRunner.
+type InstanceRunnerConfig interface {
+	GetInstancesBatchSize() int
+	GetInstanceFetchingInterval() time.Duration
+	GetAsyncWorkersCount() int
+}
+
 // InstanceRunner Главный воркер сервиса, ответственный за вытягивание экземпляров к выполнению из БД.
 type InstanceRunner struct {
 	instanceRunnerCfg InstanceRunnerConfig
 	asyncWorkerCfg    AsyncWorkerConfig
 	instanceRepo      InstanceRepository
+	handlerAdapter    HandlerAdapter
 	instanceChan      chan uuid.UUID
 }
 
@@ -36,7 +44,13 @@ func (r *InstanceRunner) Start(ctx context.Context) {
 
 	for i := 0; i < r.instanceRunnerCfg.GetAsyncWorkersCount(); i++ {
 		go func(orderNumber int) {
-			createAsyncWorker(r.instanceRepo, r.asyncWorkerCfg, r.instanceChan, orderNumber).Start(ctx)
+			createAsyncWorker(
+				r.instanceRepo,
+				r.asyncWorkerCfg,
+				r.handlerAdapter,
+				r.instanceChan,
+				orderNumber,
+			).Start(ctx)
 		}(i)
 	}
 

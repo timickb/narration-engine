@@ -7,6 +7,8 @@ import (
 	"github.com/timickb/narration-engine/internal/domain"
 	"github.com/timickb/narration-engine/internal/repository/models"
 	"github.com/timickb/narration-engine/pkg/db"
+	"github.com/timickb/narration-engine/pkg/utils"
+	"gorm.io/gorm"
 	"time"
 )
 
@@ -21,9 +23,34 @@ func NewInstanceRepo(db *db.Database) *instanceRepo {
 
 // Update Обновить экземпляр сценария.
 func (r *instanceRepo) Update(ctx context.Context, instance *domain.Instance) error {
+	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// Обновить сам экземпляр.
+		err := tx.Model(&models.DbInstance{}).
+			Where("id = ?", instance.Id).
+			Updates(models.NewDbInstanceUpdate(instance)).Error
+		if err != nil {
+			return err
+		}
+		// Обновить очередь событий.
+		if err := r.updateEvents(tx, instance.PendingEvents, instance.Id); err != nil {
+			return err
+		}
+		// До обновления могли добавиться новые события извне - нужно обновить очередь.
+		queue, err := r.fetchNewPendingEvents(tx, instance.Id)
+		if err != nil {
+			return err
+		}
+
+		instance.PendingEvents = queue
+		return nil
+	})
+	if err != nil {
+		return fmt.Errorf("update instance: %w", err)
+	}
 	return nil
 }
 
+// Create Создать новый экземпляр сценария.
 func (r *instanceRepo) Create(ctx context.Context, dto *domain.CreateInstanceDto) (uuid.UUID, error) {
 	instanceId, err := uuid.NewUUID()
 	if err != nil {
@@ -50,7 +77,7 @@ func (r *instanceRepo) FetchWithLock(ctx context.Context, dto *domain.FetchInsta
 		)
 		SELECT updated.*,
        			(SELECT json_agg(row_to_json(pe.*)) FROM pending_events pe
-            	WHERE pe.instance_id = updated.id) as events
+            	WHERE pe.instance_id = updated.id AND pe.executed_at IS NULL) as events
 		FROM instances i LEFT JOIN updated USING (id) WHERE i.id = ?`,
 		dto.LockerId, lockedTill, dto.Id, dto.Id,
 	).Scan(&instance).Error
@@ -88,6 +115,9 @@ func (r *instanceRepo) GetWaitingIds(ctx context.Context, limit int) ([]uuid.UUI
 
 	err := r.db.WithTxSupport(ctx).Debug().Table("instances").
 		Where("locked_by IS NULL OR locked_by = '' OR locked_till < now()").
+		Where("start_after IS NULL OR start_after < now()").
+		Where("failed = false").
+		Where("current_state != ?", domain.StateEnd.Name).
 		Select("id").
 		Limit(limit).
 		Scan(&ids).Error
@@ -104,4 +134,67 @@ func (r *instanceRepo) GetById(ctx context.Context, id uuid.UUID) (*domain.Insta
 		return nil, fmt.Errorf("get instance by id: %w", err)
 	}
 	return &domain.Instance{}, nil
+}
+
+// IsKeyBlocked Проверить, присутствует ли блокировка ключа в каком-нибудь экземпляре.
+func (r *instanceRepo) IsKeyBlocked(ctx context.Context, key string) (bool, error) {
+	var count int64
+	err := r.db.WithTxSupport(ctx).Model(&models.DbInstance{}).
+		Where("blocking_key = ?", key).
+		Count(&count).Error
+	if err != nil {
+		return false, fmt.Errorf("get instance by blocking key: %w", err)
+	}
+	return count > 0, nil
+}
+
+func (r *instanceRepo) updateEvents(
+	tx *gorm.DB,
+	queue *domain.EventsQueue,
+	instanceId uuid.UUID,
+) error {
+	newEvents := utils.MapSlice(
+		queue.GetNewEvents(),
+		func(e *domain.PendingEvent) *models.DbPendingEvent {
+			return models.NewDbPendingEventFromDomain(e, instanceId)
+		},
+	)
+
+	for _, event := range newEvents {
+		if err := tx.Model(&models.DbPendingEvent{}).Updates(&event).Error; err != nil {
+			return fmt.Errorf("update event in db: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func (r *instanceRepo) fetchNewPendingEvents(
+	tx *gorm.DB,
+	instanceId uuid.UUID,
+) (*domain.EventsQueue, error) {
+
+	var newPendingEvents *models.DbPendingEvents
+	err := tx.Model(&models.DbPendingEvent{}).
+		Where("instance_id = ?", instanceId).
+		Find(&newPendingEvents).
+		Order("executed_at ASC").
+		Error
+	if err != nil {
+		return nil, err
+	}
+	pendingEvents := newPendingEvents.ToDomain()
+	queue := &domain.EventsQueue{}
+	for _, event := range pendingEvents {
+		if err := queue.Enqueue(&domain.EventPushDto{
+			EventName: event.EventName,
+			Params:    event.EventParams,
+			External:  event.External,
+			FromDb:    true,
+		}); err != nil {
+			return nil, err
+		}
+	}
+
+	return queue, nil
 }

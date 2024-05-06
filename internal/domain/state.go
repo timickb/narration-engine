@@ -1,10 +1,13 @@
 package domain
 
+import "time"
+
 // State Состояние сценария.
 type State struct {
 	Name    string
 	Handler string
 	Params  map[string]StateParamValue
+	Delay   time.Duration
 }
 
 // StateParamValue Значение параметра состояния.

@@ -15,11 +15,13 @@ type PendingEvent struct {
 	EventParams string
 	// External Пришло ли событие из API (метод SendEvent)
 	External bool
+	// FromDb Было ли событие положено в очередь сразу из БД.
+	FromDb bool
 
 	// CreatedAt Дата постановки в очередь.
 	CreatedAt time.Time
 	// Executed Дата выполнения.
-	ExecutedAt *time.Time
+	ExecutedAt time.Time
 
 	// Next Следующее событие.
 	Next *PendingEvent

@@ -1,21 +1,24 @@
 -- Экземпляры сценариев
 create table instances (
-    id                  uuid not null primary key,
-    parent_id           uuid,
+    id                   uuid not null primary key,
+    parent_id            uuid,
 
-    scenario_name       text not null,
-    scenario_version    text not null,
-    current_state       text not null,
-    previous_state      text not null,
-    context             jsonb not null,
-    blocking_key        text,
-    locked_by           text,
-    locked_till         timestamptz,
-    retries             integer not null,
-    failed              boolean not null,
+    scenario_name        text not null,
+    scenario_version     text not null,
+    current_state        text not null,
+    previous_state       text not null,
+    current_state_status text not null,
+    context              jsonb not null,
+    blocking_key         text,
+    locked_by            text,
+    locked_till          timestamptz,
+    start_after          timestamptz,
+    retries              integer not null,
+    failed               boolean not null default false,
 
-    created_at          timestamptz not null default now(),
-    updated_at          timestamptz not null default now(),
+    created_at           timestamptz not null default now(),
+    updated_at           timestamptz not null default now(),
+    last_transition_at   timestamptz,
 
     constraint instance_instances_fk
         foreign key(parent_id) references instances(id)
@@ -44,8 +47,11 @@ create table pending_events (
     id                   uuid not null primary key,
     instance_id          uuid not null,
     event_name           text not null,
-    params               jsonb not null,
+    params               text not null,
     external             bool not null,
     created_at           timestamptz not null default now(),
-    executed_at          timestamptz
+    executed_at          timestamptz not null default now(),
+
+    constraint pending_events_instances_fk
+        foreign key(instance_id) references instances(id)
 );

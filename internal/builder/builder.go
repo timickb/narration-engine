@@ -8,10 +8,10 @@ import (
 	"github.com/timickb/narration-engine/internal/adapter/handler"
 	"github.com/timickb/narration-engine/internal/config"
 	"github.com/timickb/narration-engine/internal/controller"
+	"github.com/timickb/narration-engine/internal/core"
 	"github.com/timickb/narration-engine/internal/domain"
 	"github.com/timickb/narration-engine/internal/repository"
 	"github.com/timickb/narration-engine/internal/usecase"
-	"github.com/timickb/narration-engine/internal/worker"
 	"github.com/timickb/narration-engine/migrations"
 	"github.com/timickb/narration-engine/pkg/db"
 	schema "github.com/timickb/narration-engine/schema/v1/gen"
@@ -30,7 +30,7 @@ type Builder struct {
 	listener      net.Listener
 	srv           *grpc.Server
 	usecase       domain.Usecase
-	runner        *worker.InstanceRunner
+	runner        *core.InstanceRunner
 	handlers      map[string]*handler.Handler
 	handlersConns []*grpc.ClientConn
 }
@@ -90,7 +90,7 @@ func (b *Builder) initDatabase() error {
 func (b *Builder) buildInstanceRunner() {
 	instanceChan := make(chan uuid.UUID)
 	instanceRepo := repository.NewInstanceRepo(b.db)
-	b.runner = worker.NewInstanceRunner(b.cfg, b.cfg, instanceRepo, instanceChan)
+	b.runner = core.NewInstanceRunner(b.cfg, b.cfg, instanceRepo, instanceChan)
 }
 
 func (b *Builder) buildGrpcServer() error {
@@ -111,7 +111,8 @@ func (b *Builder) buildGrpcServer() error {
 func (b *Builder) buildUsecase() {
 	instanceRepo := repository.NewInstanceRepo(b.db)
 	eventRepo := repository.NewPendingEventRepo(b.db)
-	b.usecase = usecase.New(instanceRepo, eventRepo, b.cfg)
+	transactor := db.NewTransactor(b.db)
+	b.usecase = usecase.New(instanceRepo, eventRepo, transactor, b.cfg)
 }
 
 func (b *Builder) buildExternalHandlers() error {

@@ -5,4 +5,5 @@ type EventPushDto struct {
 	EventName string
 	Params    string
 	External  bool
+	FromDb    bool
 }
