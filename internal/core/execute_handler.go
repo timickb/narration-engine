@@ -3,8 +3,10 @@ package core
 import (
 	"context"
 	"fmt"
+	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 	"github.com/timickb/narration-engine/internal/domain"
+	"time"
 )
 
 func (w *AsyncWorker) executeHandler(ctx context.Context, instance *domain.Instance) error {
@@ -28,6 +30,7 @@ func (w *AsyncWorker) executeHandler(ctx context.Context, instance *domain.Insta
 		logger.Error("Handler invocation failed")
 		return fmt.Errorf("handlerAdapter.CallHandler: %w", err)
 	}
+	logger.Info("Handler had invoked with success.")
 
 	// 2. Добавить сгенерированные обработчиком данные в контекст экземпляра.
 	if err = instance.Context.MergeData([]byte(result.DataToContext)); err != nil {
@@ -35,13 +38,14 @@ func (w *AsyncWorker) executeHandler(ctx context.Context, instance *domain.Insta
 	}
 
 	// 3. Добавить сгенерированное обработчиком событие в очередь событий.
-	if err = instance.PendingEvents.Enqueue(&domain.EventPushDto{
-		EventName: result.NextEvent.Name,
-		Params:    result.NextEventPayload,
-		External:  false,
-	}); err != nil {
-		return fmt.Errorf("instance.PendingEvents.Enqueue: %w", err)
-	}
+	instance.PendingEvents.PushToFront(&domain.PendingEvent{
+		Id:          uuid.New(),
+		EventName:   result.NextEvent.Name,
+		EventParams: result.NextEventPayload,
+		CreatedAt:   time.Now(),
+		ExecutedAt:  time.Now(),
+		External:    false,
+	})
 
 	return nil
 }

@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/timickb/narration-engine/internal/domain"
 	"github.com/timickb/narration-engine/pkg/utils"
+	"sort"
 	"time"
 )
 
@@ -114,6 +115,7 @@ func (i *FilledInstance) ToDomain() (*domain.Instance, error) {
 	if err != nil {
 		return nil, err
 	}
+	instance.PendingEvents = &domain.EventsQueue{}
 
 	if len(i.Events) != 0 {
 		var rawEvents DbPendingEvents
@@ -122,19 +124,15 @@ func (i *FilledInstance) ToDomain() (*domain.Instance, error) {
 		}
 
 		events := rawEvents.ToDomain()
-		eventsQueue := &domain.EventsQueue{}
+
+		sort.Slice(events, func(i, j int) bool {
+			return events[i].ExecutedAt.Before(events[j].ExecutedAt)
+		})
 
 		for _, event := range events {
-			if err := eventsQueue.Enqueue(&domain.EventPushDto{
-				EventName: event.EventName,
-				Params:    event.EventParams,
-				External:  event.External,
-				FromDb:    true,
-			}); err != nil {
-				return nil, fmt.Errorf("push to event queue: %w", err)
-			}
+			event.FromDb = true
+			instance.PendingEvents.Enqueue(event)
 		}
-		instance.PendingEvents = eventsQueue
 	}
 
 	return instance, nil

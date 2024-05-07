@@ -1,0 +1,19 @@
+@startuml
+
+!$name = "scenario_without_handlers"
+!$version = "1.0"
+
+hide empty description
+
+title Примитивный КА без обработчиков
+
+state Состояние1
+state Состояние2
+state Состояние3
+
+[*] --> Состояние1
+Состояние1 --> Состояние2
+Состояние2 --> Состояние3
+Состояние3 --> [*]
+
+@enduml

@@ -1,10 +1,8 @@
 package domain
 
 import (
-	"fmt"
 	"github.com/google/uuid"
 	"github.com/timickb/narration-engine/pkg/utils"
-	"time"
 )
 
 // EventsQueue Очередь событий на обработку.
@@ -21,22 +19,7 @@ func (q *EventsQueue) Size() int {
 }
 
 // Enqueue Добавить событие в конец очереди.
-func (q *EventsQueue) Enqueue(dto *EventPushDto) error {
-	id, err := uuid.NewUUID()
-	if err != nil {
-		return fmt.Errorf("uuid generate: %w", err)
-	}
-
-	event := &PendingEvent{
-		Id:          id,
-		EventName:   dto.EventName,
-		EventParams: dto.Params,
-		External:    dto.External,
-		FromDb:      dto.FromDb,
-		CreatedAt:   time.Now(),
-		ExecutedAt:  time.Now(),
-	}
-
+func (q *EventsQueue) Enqueue(event *PendingEvent) {
 	if q.size == 0 {
 		q.front = event
 		q.back = event
@@ -45,30 +28,13 @@ func (q *EventsQueue) Enqueue(dto *EventPushDto) error {
 		q.back = event
 	}
 	q.size++
-
-	return nil
 }
 
 // PushToFront Добавить событие в начало очереди (приоритетно).
-func (q *EventsQueue) PushToFront(dto *EventPushDto) error {
-	id, err := uuid.NewUUID()
-	if err != nil {
-		return fmt.Errorf("uuid generate: %w", err)
-	}
-
-	event := &PendingEvent{
-		Id:          id,
-		EventName:   dto.EventName,
-		EventParams: dto.Params,
-		External:    dto.External,
-		CreatedAt:   time.Now(),
-	}
-
+func (q *EventsQueue) PushToFront(event *PendingEvent) {
 	event.Next = q.front
 	q.front = event
 	q.size++
-
-	return nil
 }
 
 // Dequeue Достать первое событие из очереди и удалить его.
@@ -79,6 +45,9 @@ func (q *EventsQueue) Dequeue() *PendingEvent {
 	front := q.front
 	q.front = q.front.Next
 	front.Next = nil
+	if q.front == nil {
+		q.back = nil
+	}
 
 	if q.shifted == nil {
 		q.shifted = make(map[uuid.UUID]*PendingEvent)

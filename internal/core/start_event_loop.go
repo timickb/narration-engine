@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 	"github.com/timickb/narration-engine/internal/domain"
+	"time"
 )
 
 func (w *AsyncWorker) startEventLoop(ctx context.Context, id uuid.UUID) error {
@@ -18,12 +19,12 @@ func (w *AsyncWorker) startEventLoop(ctx context.Context, id uuid.UUID) error {
 		LockTimeout: w.config.GetInstanceLockTimeout(),
 	})
 	if err != nil {
+		logger.Error("Instance fetch failed")
 		return fmt.Errorf("instanceRepo.FetchWithLock: %w", err)
 	}
-
 	defer func() {
-		if err := w.instanceRepo.Unlock(ctx, id); err != nil {
-			logger.Errorf("Failed to unlock instance: %s", err.Error())
+		if err = w.instanceRepo.Unlock(ctx, id); err != nil {
+			logger.Errorf("Instance unlock failed: %s", err.Error())
 		}
 	}()
 
@@ -44,28 +45,38 @@ func (w *AsyncWorker) startEventLoop(ctx context.Context, id uuid.UUID) error {
 
 	logger.Info("Starting event loop")
 
-	pendingEvent := instance.PendingEvents.Front()
-	for pendingEvent != nil {
+	for pendingEvent := instance.PendingEvents.Front(); pendingEvent != nil; pendingEvent = instance.PendingEvents.Front() {
 		log.Infof("Event name: %s; event params: %s", pendingEvent.EventName, pendingEvent.EventParams)
 
 		transitionResult, err := w.performTransition(ctx, instance, pendingEvent)
 		if err != nil {
 			return fmt.Errorf("perfrom transition: %w", err)
 		}
+
 		switch transitionResult {
 		case domain.TransitionResultBreak:
+			// Прервать цикл событий по одной из причин:
+			// 1. Сценарий достиг терминального состояния;
+			// 2. Новым состоянием установлена задержка выполнения;
+			// 3. Не найден переход из текущего состояния для события.
 			break
 		case domain.TransitionResultCompleted:
-			continue
+			// У нового состояния нет обработчика -> сгенерировать событие continue.
+			instance.PendingEvents.PushToFront(&domain.PendingEvent{
+				Id:          uuid.New(),
+				EventName:   domain.EventContinue.Name,
+				EventParams: "{}",
+				External:    false,
+				FromDb:      false,
+				CreatedAt:   time.Now(),
+				ExecutedAt:  time.Now(),
+			})
 		case domain.TransitionResultHandlerStarted:
+			// У нового состояния есть обработчик -> вызвать его.
 			if err := w.executeHandler(ctx, instance); err != nil {
 				return fmt.Errorf("execute handler: %w", err)
 			}
 		}
-	}
-
-	if instance.CurrentState == domain.StateEnd {
-		logger.Infof("Instance execution is finished.")
 	}
 
 	return nil

@@ -18,20 +18,25 @@ func (w *AsyncWorker) performTransition(
 
 	// В конце нужно обновить экземпляр в БД.
 	defer func() {
-		err = w.instanceRepo.Update(ctx, instance)
+		if err = w.instanceRepo.Update(ctx, instance); err != nil {
+			logger.Errorf("Instance update failed: %s", err.Error())
+		}
 	}()
 
 	// Найти нужный переход в сценарии.
 	var transition *domain.Transition
-	for _, t := range instance.Scenario.Transitions {
-		if t.From.Name == instance.CurrentState.Name && t.Event.Name == event.EventName {
-			transition = t
-			break
+	if event.EventName == domain.EventStart.Name {
+		transition = domain.TransitionToStart
+	} else {
+		for _, t := range instance.Scenario.Transitions {
+			if t.From.Name == instance.CurrentState.Name && t.Event.Name == event.EventName {
+				transition = t
+				break
+			}
 		}
 	}
 	if transition == nil {
-		instance.Failed = true
-		logger.Errorf("No transition found in scenario, break execution")
+		logger.Error("No transition found for event, break execution")
 		return domain.TransitionResultBreak, err
 	}
 	nextState := transition.To
@@ -52,12 +57,17 @@ func (w *AsyncWorker) performTransition(
 	instance.PerformTransition(nextState)
 	instance.PendingEvents.Dequeue()
 
+	if nextState.Name == domain.StateEnd.Name {
+		logger.Infof("Instance has reached terminal state. Break execution.")
+		return domain.TransitionResultBreak, err
+	}
+
 	// Вернуть результат в зависимости от наличия обработчика у состояния.
 	if nextState.Handler != "" {
 		logger.Infof("State %s has handler %s", nextState.Name, nextState.Handler)
 		return domain.TransitionResultHandlerStarted, err
 	}
-	logger.Infof("No handler for state %s", nextState.Name)
 
+	logger.Infof("No handler for state %s", nextState.Name)
 	return domain.TransitionResultCompleted, err
 }

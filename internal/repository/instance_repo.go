@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/timickb/narration-engine/internal/domain"
@@ -43,6 +44,8 @@ func (r *instanceRepo) Update(ctx context.Context, instance *domain.Instance) er
 
 		instance.PendingEvents = queue
 		return nil
+	}, &sql.TxOptions{
+		Isolation: sql.LevelRepeatableRead,
 	})
 	if err != nil {
 		return fmt.Errorf("update instance: %w", err)
@@ -77,7 +80,7 @@ func (r *instanceRepo) FetchWithLock(ctx context.Context, dto *domain.FetchInsta
 		)
 		SELECT updated.*,
        			(SELECT json_agg(row_to_json(pe.*)) FROM pending_events pe
-            	WHERE pe.instance_id = updated.id AND pe.executed_at IS NULL) as events
+            	WHERE pe.instance_id = updated.id AND pe.executed_at < now()) as events
 		FROM instances i LEFT JOIN updated USING (id) WHERE i.id = ?`,
 		dto.LockerId, lockedTill, dto.Id, dto.Id,
 	).Scan(&instance).Error
@@ -153,6 +156,14 @@ func (r *instanceRepo) updateEvents(
 	queue *domain.EventsQueue,
 	instanceId uuid.UUID,
 ) error {
+
+	for _, deletedEventId := range queue.GetShiftedIds() {
+		err := tx.Delete(&models.DbPendingEvent{}, deletedEventId).Error
+		if err != nil {
+			return err
+		}
+	}
+
 	newEvents := utils.MapSlice(
 		queue.GetNewEvents(),
 		func(e *domain.PendingEvent) *models.DbPendingEvent {
@@ -186,14 +197,8 @@ func (r *instanceRepo) fetchNewPendingEvents(
 	pendingEvents := newPendingEvents.ToDomain()
 	queue := &domain.EventsQueue{}
 	for _, event := range pendingEvents {
-		if err := queue.Enqueue(&domain.EventPushDto{
-			EventName: event.EventName,
-			Params:    event.EventParams,
-			External:  event.External,
-			FromDb:    true,
-		}); err != nil {
-			return nil, err
-		}
+		event.FromDb = true
+		queue.Enqueue(event)
 	}
 
 	return queue, nil
