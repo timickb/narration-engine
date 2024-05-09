@@ -111,7 +111,7 @@ var rul3s = [...]string{
 	"Tag",
 	"Duration",
 	"Title",
-	"HandlerName",
+	"Name",
 	"Version",
 	"HideEmptyDescription",
 	"Theme",
@@ -471,8 +471,9 @@ func (p *StateDiagram) Execute() {
 				StateName: p.stateName,
 				Handler:   p.handlerName,
 				Params:    p.params,
+				Delay:     p.delay,
 			}
-			p.AddState(dto)
+			p.AddOrUpdateState(dto)
 			p.clearState()
 
 		case ruleAction23:
@@ -577,7 +578,7 @@ func (p *StateDiagram) Init(options ...func(*StateDiagram) error) error {
 
 	_rules = [...]func() bool{
 		nil,
-		/* 0 StateDiagram <- <(Start (Version / HandlerName / Transition / StateSkin / State / RetryLabel / Theme / ((&('\'') Comment) | (&('!') Var) | (&('s') Skinparam) | (&('h') HideEmptyDescription) | (&('t') Title)))* End !.)> */
+		/* 0 StateDiagram <- <(Start (Version / Name / Transition / StateSkin / State / RetryLabel / Theme / ((&('\'') Comment) | (&('!') Var) | (&('s') Skinparam) | (&('h') HideEmptyDescription) | (&('t') Title)))* End !.)> */
 		func() bool {
 			position0, tokenIndex0 := position, tokenIndex
 			{
@@ -2047,11 +2048,11 @@ func (p *StateDiagram) Init(options ...func(*StateDiagram) error) error {
 		},
 		/* 7 Tag <- <('<' '<' <identifier> ('>' '>') Action1)> */
 		nil,
-		/* 8 Duration <- <<([0-9]+ ((&('d') 'd') | (&('h') 'h') | (&('m') 'm') | (&('s') 's')))>> */
+		/* 8 Duration <- <<([1-9] [0-9]* ((&('d') 'd') | (&('h') 'h') | (&('m') 'm') | (&('s') 's')))>> */
 		nil,
 		/* 9 Title <- <('t' 'i' 't' 'l' 'e' SP <anySequence> NL Action2)> */
 		nil,
-		/* 10 HandlerName <- <('!' '$' 'n' 'a' 'm' 'e' SP '=' SP '"' <identifier> '"' NL Action3)> */
+		/* 10 Name <- <('!' '$' 'n' 'a' 'm' 'e' SP '=' SP '"' <identifier> '"' NL Action3)> */
 		nil,
 		/* 11 Version <- <('!' '$' 'v' 'e' 'r' 's' 'i' 'o' 'n' SP '=' SP '"'? <([0-9]+ . [0-9]+)> '"'? NL Action4)> */
 		nil,
@@ -2411,7 +2412,7 @@ func (p *StateDiagram) Init(options ...func(*StateDiagram) error) error {
 					position200 := position
 					{
 						position201 := position
-						if c := buffer[position]; c < rune('0') || c > rune('9') {
+						if c := buffer[position]; c < rune('1') || c > rune('9') {
 							goto l198
 						}
 						position++
@@ -3048,8 +3049,9 @@ func (p *StateDiagram) Init(options ...func(*StateDiagram) error) error {
 		        StateName: p.stateName,
 		        Handler: p.handlerName,
 		        Params: p.params,
+		        Delay: p.delay,
 		    }
-		    p.AddState(dto);
+		    p.AddOrUpdateState(dto);
 		    p.clearState()
 		}> */
 		nil,

@@ -17,8 +17,14 @@ message HandleRequest {
   string instance_id = 1;
   // context - данные экземпляра (json)
   string context = 2;
+  // event_name = событие, по которому произошел переход в состояние;
+  string event_name = 3;
+  // event_params - данные, переданные с событием
+  string event_params = 4;
   // state - название соответствующего состояния.
-  string state = 3;
+  string state = 5;
+  // handler - название обработчика.
+  string handler = 6;
 }
 
 // HandleResponse - структура с результатом работы обработчика.

@@ -29,16 +29,18 @@ type Instance struct {
 
 	CreatedAt        time.Time  `json:"created_at"`
 	LastTransitionAt *time.Time `json:"last_transition_at"`
+	LastTransitionId *uuid.UUID `json:"last_transition_id"`
 
 	// Задержка выполнения экземпляра. Может быть установлена состоянием.
 	startAfter *time.Time
 }
 
 // PerformTransition Выполнить переход в новое состояние.
-func (i *Instance) PerformTransition(state *State) {
+func (i *Instance) PerformTransition(state *State, savedId uuid.UUID) {
 	i.LastTransitionAt = utils.Ptr(time.Now())
 	i.PreviousState = i.CurrentState
 	i.CurrentState = state
+	i.LastTransitionId = utils.Ptr(savedId)
 
 	if state.Handler == "" {
 		// Если обработчик за состоянием не закреплен - сразу поставить статус в "обработан".

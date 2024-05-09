@@ -7,4 +7,6 @@ type CallHandlerDto struct {
 	StateName   string
 	InstanceId  uuid.UUID
 	Context     string
+	EventName   string
+	EventParams string
 }

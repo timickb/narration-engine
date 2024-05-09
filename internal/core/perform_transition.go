@@ -6,7 +6,7 @@ import (
 	"github.com/timickb/narration-engine/internal/domain"
 )
 
-// Осуществить переход экземпляра сценария между состояниями.
+// Осуществить переход экземпляра сценария в новое состояние.
 func (w *AsyncWorker) performTransition(
 	ctx context.Context, instance *domain.Instance, event *domain.PendingEvent,
 ) (result domain.TransitionResult, err error) {
@@ -15,15 +15,13 @@ func (w *AsyncWorker) performTransition(
 		WithField("instanceId", instance.Id).
 		WithField("pendingEvent", event.EventName).
 		WithField("currentState", instance.CurrentState.Name)
-
-	// В конце нужно обновить экземпляр в БД.
 	defer func() {
 		if err = w.instanceRepo.Update(ctx, instance); err != nil {
 			logger.Errorf("Instance update failed: %s", err.Error())
 		}
 	}()
 
-	// Найти нужный переход в сценарии.
+	// 1. Найти нужный переход в сценарии.
 	var transition *domain.Transition
 	if event.EventName == domain.EventStart.Name {
 		transition = domain.TransitionToStart
@@ -41,33 +39,35 @@ func (w *AsyncWorker) performTransition(
 	}
 	nextState := transition.To
 
-	// Добавить задержку в экземпляр, если она есть у состояния.
+	// 2. Добавить задержку в экземпляр, если она есть у состояния.
 	if nextState.Delay > 0 {
 		logger.Infof("Next state %s has execution delay", nextState.Name)
-		if instance.IsDelayAccomplished() {
-			logger.Infof("Delay is already accomplished")
-			instance.RemoveDelay()
-		} else {
-			logger.Info("Break execution due to delay")
-			instance.SetDelay(nextState.Delay)
-			return domain.TransitionResultBreak, err
-		}
+		instance.SetDelay(nextState.Delay)
 	}
 
-	instance.PerformTransition(nextState)
+	// 3. Осуществить переход и сохранить его в историю.
+	transitionId, err := w.transitionRepo.Save(ctx, &domain.SaveTransitionDto{
+		InstanceId:  instance.Id,
+		StateFrom:   instance.CurrentState.Name,
+		StateTo:     nextState.Name,
+		EventName:   event.EventName,
+		EventParams: event.EventParams,
+	})
+	instance.PerformTransition(nextState, transitionId)
 	instance.PendingEvents.Dequeue()
 
+	// 4. Достигнуто ли терминальное состояние сценария?
 	if nextState.Name == domain.StateEnd.Name {
 		logger.Infof("Instance has reached terminal state. Break execution.")
 		return domain.TransitionResultBreak, err
 	}
 
-	// Вернуть результат в зависимости от наличия обработчика у состояния.
+	// 5. Есть ли обработчик у нового состояния?
 	if nextState.Handler != "" {
 		logger.Infof("State %s has handler %s", nextState.Name, nextState.Handler)
-		return domain.TransitionResultHandlerStarted, err
+		return domain.TransitionResultPendingHandler, err
 	}
-
 	logger.Infof("No handler for state %s", nextState.Name)
+
 	return domain.TransitionResultCompleted, err
 }

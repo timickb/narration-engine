@@ -55,3 +55,6 @@ create table pending_events (
     constraint pending_events_instances_fk
         foreign key(instance_id) references instances(id)
 );
+
+-- Индекс для поиска в истории переходов по instance_id
+create index transitions_instance_id_idx on transitions(instance_id);

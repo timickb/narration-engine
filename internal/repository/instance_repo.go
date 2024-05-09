@@ -24,7 +24,7 @@ func NewInstanceRepo(db *db.Database) *instanceRepo {
 
 // Update Обновить экземпляр сценария.
 func (r *instanceRepo) Update(ctx context.Context, instance *domain.Instance) error {
-	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+	err := r.db.WithContext(ctx).Debug().Transaction(func(tx *gorm.DB) error {
 		// Обновить сам экземпляр.
 		err := tx.Model(&models.DbInstance{}).
 			Where("id = ?", instance.Id).
@@ -75,7 +75,7 @@ func (r *instanceRepo) FetchWithLock(ctx context.Context, dto *domain.FetchInsta
 	err := r.db.WithTxSupport(ctx).Debug().Raw(
 		`WITH updated AS (
     	UPDATE instances SET locked_by = ?, locked_till = ?
-        	WHERE id = ? AND (locked_by = '' OR locked_by IS NULL OR locked_till < now())
+        	WHERE id = ? AND failed = false AND (locked_by = '' OR locked_by IS NULL OR locked_till < now())
         	RETURNING *
 		)
 		SELECT updated.*,
@@ -172,8 +172,8 @@ func (r *instanceRepo) updateEvents(
 	)
 
 	for _, event := range newEvents {
-		if err := tx.Model(&models.DbPendingEvent{}).Updates(&event).Error; err != nil {
-			return fmt.Errorf("update event in db: %w", err)
+		if err := tx.Model(&models.DbPendingEvent{}).Create(&event).Error; err != nil {
+			return fmt.Errorf("create pending event in db: %w", err)
 		}
 	}
 

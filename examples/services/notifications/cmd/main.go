@@ -7,11 +7,13 @@ import (
 	"google.golang.org/grpc/reflection"
 	"log"
 	"net"
+	"notifications/internal/adapter/mail"
 	"notifications/internal/handler"
 )
 
 func main() {
-	sendMessageHandler := handler.NewSendMessageHandler()
+	mailAdapter := mail.NewAdapter()
+	sendMessageHandler := handler.NewSendMessageHandler(mailAdapter)
 	h := handler.New(map[string]worker.Worker{
 		sendMessageHandler.Name(): sendMessageHandler,
 	})

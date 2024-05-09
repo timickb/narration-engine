@@ -1,6 +1,8 @@
-go 1.21.3
+go 1.22.3
 
 use (
 	.
 	examples/services/notifications
+	examples/services/orders
+	examples/services/blogs
 )

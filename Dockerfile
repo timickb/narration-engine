@@ -1,11 +1,9 @@
-FROM golang:alpine AS builder
-ENV CGO_ENABLED 0
-ENV GOOS LINUX
+FROM golang:1.22.3
 
-RUN apk update --no-cache && apk add --no-cache tzdata
-
-WORKDIR /build
-ADD go.mod .
-ADD go.sum .
-RUN go mod download
+WORKDIR /engine
 COPY . .
+RUN go mod tidy
+RUN go build -o engine cmd/main.go
+
+EXPOSE 5003
+CMD ["./engine", "-cfg", "cmd/config.yaml"]

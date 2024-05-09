@@ -90,7 +90,23 @@ func (b *Builder) initDatabase() error {
 func (b *Builder) buildInstanceRunner() {
 	instanceChan := make(chan uuid.UUID)
 	instanceRepo := repository.NewInstanceRepo(b.db)
-	b.runner = core.NewInstanceRunner(b.cfg, b.cfg, instanceRepo, instanceChan)
+	transitionRepo := repository.NewTransitionRepo(b.db)
+	transactor := db.NewTransactor(b.db)
+
+	handlerAdapters := make(map[string]core.HandlerAdapter)
+	for key, value := range b.handlers {
+		handlerAdapters[key] = value
+	}
+
+	b.runner = core.NewInstanceRunner(
+		b.cfg,
+		b.cfg,
+		transactor,
+		instanceRepo,
+		transitionRepo,
+		handlerAdapters,
+		instanceChan,
+	)
 }
 
 func (b *Builder) buildGrpcServer() error {

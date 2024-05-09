@@ -6,51 +6,36 @@ import (
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 	"github.com/timickb/narration-engine/internal/domain"
-	"time"
 )
 
-// HandlerAdapter Интерфейс адаптера для взаимодействия со внешними обработчиками.
-type HandlerAdapter interface {
-	CallHandler(ctx context.Context, dto *domain.CallHandlerDto) (*domain.CallHandlerResult, error)
-}
-
-// InstanceRepository Репозиторий над экземплярами сценариев.
-type InstanceRepository interface {
-	FetchWithLock(ctx context.Context, dto *domain.FetchInstanceDto) (*domain.Instance, error)
-	GetWaitingIds(ctx context.Context, limit int) ([]uuid.UUID, error)
-	Unlock(ctx context.Context, id uuid.UUID) error
-	Update(ctx context.Context, instance *domain.Instance) error
-}
-
-// AsyncWorkerConfig Конфигурация для AsyncWorker.
-type AsyncWorkerConfig interface {
-	GetInstanceLockTimeout() time.Duration
-	GetLockerId() string
-	GetLoadedScenario(name string, version string) (*domain.Scenario, error)
-}
-
 type AsyncWorker struct {
-	instanceRepo   InstanceRepository
-	config         AsyncWorkerConfig
-	handlerAdapter HandlerAdapter
-	instanceChan   chan uuid.UUID
+	transactor      domain.Transactor
+	instanceRepo    InstanceRepository
+	transitionRepo  TransitionRepository
+	config          AsyncWorkerConfig
+	handlerAdapters map[string]HandlerAdapter
+	instanceChan    chan uuid.UUID
 	// Порядковый номер обработчика у InstanceRunner'а.
 	orderNumber int
 }
 
 func createAsyncWorker(
+	transactor domain.Transactor,
 	instanceRepo InstanceRepository,
+	transitionRepo TransitionRepository,
 	config AsyncWorkerConfig,
-	handlerAdapter HandlerAdapter,
+	handlerAdapters map[string]HandlerAdapter,
 	instanceChan chan uuid.UUID,
 	orderNumber int,
 ) *AsyncWorker {
 	return &AsyncWorker{
-		instanceRepo:   instanceRepo,
-		config:         config,
-		handlerAdapter: handlerAdapter,
-		instanceChan:   instanceChan,
-		orderNumber:    orderNumber,
+		transactor:      transactor,
+		instanceRepo:    instanceRepo,
+		transitionRepo:  transitionRepo,
+		config:          config,
+		handlerAdapters: handlerAdapters,
+		instanceChan:    instanceChan,
+		orderNumber:     orderNumber,
 	}
 }
 
@@ -69,7 +54,7 @@ func (w *AsyncWorker) Start(ctx context.Context) {
 				return
 			}
 			if err := w.startEventLoop(ctx, instanceId); err != nil {
-				logger.Info("Failed to handle instance: %s", w.orderNumber, err.Error())
+				logger.Errorf("Failed to handle instance: %s", err.Error())
 			}
 		}
 	}

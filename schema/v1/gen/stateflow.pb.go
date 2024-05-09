@@ -96,6 +96,7 @@ func (x *StartRequest) GetContext() string {
 	return ""
 }
 
+// StartResponse - ответ на запрос запуска экземпляра сценария.
 type StartResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

@@ -10,9 +10,12 @@ import (
 // CallHandler Вызов внешнего обработчика состояния.
 func (h *Handler) CallHandler(ctx context.Context, dto *domain.CallHandlerDto) (*domain.CallHandlerResult, error) {
 	resp, err := h.client.Handle(ctx, &schema.HandleRequest{
-		InstanceId: dto.InstanceId.String(),
-		Context:    dto.Context,
-		State:      dto.StateName,
+		InstanceId:  dto.InstanceId.String(),
+		Context:     dto.Context,
+		State:       dto.StateName,
+		Handler:     dto.HandlerName,
+		EventName:   dto.EventName,
+		EventParams: dto.EventParams,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("client.Handle: %w", err)

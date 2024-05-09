@@ -1,6 +1,6 @@
 package parser
 
-import "github.com/timickb/go-stateflow/internal/domain"
+import "github.com/timickb/narration-engine/internal/domain"
 
 type StateDiagram Peg {
     States
@@ -40,7 +40,7 @@ SP <- ( ' ' / '\t' / '\\n' )*
 
 Word <- < anyChar+ > { p.word = text }
 Tag <- '<<' < identifier > '>>' { p.AddTag(text) }
-Duration <- < [0-9]+ ('s' / 'm' / 'h' / 'd') >
+Duration <- < [1-9][0-9]* ('s' / 'm' / 'h' / 'd') >
 
 Title <- 'title' SP < anySequence > NL { p.Title = text }
 Name <- '!$name' SP '=' SP '"' < identifier > '"' NL { p.setName(text) }
@@ -97,8 +97,9 @@ State <- 'state' SP StateName SP (Tag SP?)* SP (':' SP (Delay / Retry / Delay SP
             StateName: p.stateName,
             Handler: p.handlerName,
             Params: p.params,
+            Delay: p.delay,
         }
-        p.AddState(dto);
+        p.AddOrUpdateState(dto);
         p.clearState()
     }
 Transition <- (StateFrom SP Arrow SP StateTo / StateTo SP BackArrow SP StateFrom ) SP (':' SP EventName)? NL

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/timickb/narration-engine/internal/domain"
 	"os"
+	"time"
 )
 
 // StateDiagramParser - реализация парсера Plant UML диаграмм.
@@ -32,15 +33,26 @@ func (p *StateDiagramParser) Parse(filePath string) (*domain.Scenario, error) {
 	return diagram.ToDomain(), nil
 }
 
-// AddState Добавить состояние.
-func (d *StateDiagram) AddState(dto *AddStateDto) {
+// AddOrUpdateState Добавить или обновить существующее состояние.
+func (d *StateDiagram) AddOrUpdateState(dto *AddStateDto) {
 	if d.States.States == nil {
 		d.States.Init()
 	}
 
-	for _, state := range d.States.States {
+	var delay time.Duration
+	var parseErr error
+
+	if dto.Delay != "" {
+		delay, parseErr = time.ParseDuration(d.delay)
+		if parseErr != nil {
+			panic(fmt.Sprintf("parse state delay: %s", parseErr.Error()))
+		}
+	}
+
+	for i, state := range d.States.States {
 		if state.Name == dto.StateName {
-			panic(fmt.Sprintf("duplicate state name %s", dto.StateName))
+			d.States.States[i].Delay = delay
+			return
 		}
 	}
 
@@ -48,6 +60,7 @@ func (d *StateDiagram) AddState(dto *AddStateDto) {
 		Name:    dto.StateName,
 		Handler: dto.Handler,
 		Params:  dto.Params,
+		Delay:   delay,
 	})
 }
 
@@ -103,7 +116,10 @@ func (d *StateDiagram) AddTag(tag string) {
 }
 
 func (d *StateDiagram) AddRetryLabel(name, value string) {
-
+	if d.RetryLabels == nil {
+		d.RetryLabels = make(map[string]string)
+	}
+	d.RetryLabels[name] = value
 }
 
 func (d *StateDiagram) appendParam() {

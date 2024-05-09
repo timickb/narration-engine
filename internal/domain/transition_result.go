@@ -6,8 +6,10 @@ type TransitionResult string
 const (
 	// TransitionResultBreak Выполнение экземпляра закончено или прервано.
 	TransitionResultBreak = "BREAK"
-	// TransitionResultHandlerStarted Переход осуществлен, обработчик еще не выполнен.
-	TransitionResultHandlerStarted = "HANDLER_STARTED"
+	// TransitionResultPendingHandler Переход осуществлен, обработчик еще не выполнен.
+	TransitionResultPendingHandler = "PENDING_HANDLER"
 	// TransitionResultCompleted Переход осуществлен, можно перейти к следующему событию.
 	TransitionResultCompleted = "COMPLETED"
+	// TransitionResultInstanceDelayed Переход осуществлен, назначена задержка выполнения экземпляра.
+	TransitionResultInstanceDelayed = "DELAYED"
 )

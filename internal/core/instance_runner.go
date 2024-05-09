@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
+	"github.com/timickb/narration-engine/internal/domain"
 	"time"
 )
 
@@ -17,23 +18,31 @@ type InstanceRunnerConfig interface {
 
 // InstanceRunner Главный воркер сервиса, ответственный за вытягивание экземпляров к выполнению из БД.
 type InstanceRunner struct {
+	transactor        domain.Transactor
 	instanceRunnerCfg InstanceRunnerConfig
 	asyncWorkerCfg    AsyncWorkerConfig
 	instanceRepo      InstanceRepository
-	handlerAdapter    HandlerAdapter
+	transitionRepo    TransitionRepository
+	handlerAdapters   map[string]HandlerAdapter
 	instanceChan      chan uuid.UUID
 }
 
 func NewInstanceRunner(
 	instanceRunnerCfg InstanceRunnerConfig,
 	asyncWorkerCfg AsyncWorkerConfig,
+	transactor domain.Transactor,
 	instanceRepo InstanceRepository,
+	transitionRepo TransitionRepository,
+	handlerAdapters map[string]HandlerAdapter,
 	instanceChan chan uuid.UUID,
 ) *InstanceRunner {
 	return &InstanceRunner{
 		instanceRunnerCfg: instanceRunnerCfg,
 		asyncWorkerCfg:    asyncWorkerCfg,
+		transactor:        transactor,
 		instanceRepo:      instanceRepo,
+		transitionRepo:    transitionRepo,
+		handlerAdapters:   handlerAdapters,
 		instanceChan:      instanceChan,
 	}
 }
@@ -45,9 +54,11 @@ func (r *InstanceRunner) Start(ctx context.Context) {
 	for i := 0; i < r.instanceRunnerCfg.GetAsyncWorkersCount(); i++ {
 		go func(orderNumber int) {
 			createAsyncWorker(
+				r.transactor,
 				r.instanceRepo,
+				r.transitionRepo,
 				r.asyncWorkerCfg,
-				r.handlerAdapter,
+				r.handlerAdapters,
 				r.instanceChan,
 				orderNumber,
 			).Start(ctx)

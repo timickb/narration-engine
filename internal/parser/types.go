@@ -23,6 +23,7 @@ type AddTransitionDto struct {
 type AddStateDto struct {
 	StateName string
 	Handler   string
+	Delay     string
 	Params    map[string]domain.StateParamValue
 }
 
