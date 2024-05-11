@@ -9,6 +9,10 @@ import (
 	"time"
 )
 
+const (
+	defaultHandlerFailMessage = "handler failed"
+)
+
 func (w *AsyncWorker) startEventLoop(ctx context.Context, id uuid.UUID) error {
 	logger := log.WithContext(ctx).WithField("instance", id.String())
 
@@ -43,8 +47,16 @@ func (w *AsyncWorker) startEventLoop(ctx context.Context, id uuid.UUID) error {
 			return fmt.Errorf("transitionRepo.GetLastForInstance: %w", err)
 		}
 
-		if err := w.executeHandler(ctx, instance, lastTransition.EventName, lastTransition.EventParams); err != nil {
-			return fmt.Errorf("execute handler: %w", err)
+		handlerErr := w.executeHandler(ctx, instance, lastTransition.EventName, lastTransition.EventParams)
+		if handlerErr != nil {
+			err, breakLoop := w.handleHandlerErr(ctx, logger, instance, handlerErr)
+			if err != nil {
+				return err
+			}
+			if breakLoop {
+				// Сюда попадаем, если отрабатывает ретрай.
+				return nil
+			}
 		}
 	}
 
@@ -62,12 +74,11 @@ func (w *AsyncWorker) startEventLoop(ctx context.Context, id uuid.UUID) error {
 		if transitionResult == domain.TransitionResultBreak {
 			// Прервать цикл событий по одной из причин:
 			// 1. Сценарий достиг терминального состояния;
-			// 2. Новым состоянием установлена задержка выполнения;
-			// 3. Не найден переход из текущего состояния для события.
+			// 2. Не найден переход из текущего состояния для события.
 			break
 		} else if transitionResult == domain.TransitionResultCompleted {
 			// У нового состояния не было обработчика -> закончить итерацию.
-			if err = w.pushEventAndUpdate(ctx, instance, domain.EventContinue); err != nil {
+			if err = w.pushEventAndUpdate(ctx, instance, domain.EventContinue, nil); err != nil {
 				return fmt.Errorf("push event continue: %w", err)
 			}
 			continue
@@ -75,12 +86,14 @@ func (w *AsyncWorker) startEventLoop(ctx context.Context, id uuid.UUID) error {
 			// У нового состояния есть обработчик -> вызвать его.
 			handlerErr := w.executeHandler(ctx, instance, pendingEvent.EventName, pendingEvent.EventParams)
 			if handlerErr != nil {
-				logger.Error("Push event handler_fail due to handler execution error")
-				instance.Failed = true
-				if err = w.pushEventAndUpdate(ctx, instance, domain.EventHandlerFail); err != nil {
-					return fmt.Errorf("push event handler fail: %w", err)
+				err, breakLoop := w.handleHandlerErr(ctx, logger, instance, handlerErr)
+				if err != nil {
+					return err
 				}
-				break
+				if breakLoop {
+					// Сюда попадаем, если отрабатывает ретрай.
+					break
+				}
 			}
 		}
 	}
@@ -88,7 +101,9 @@ func (w *AsyncWorker) startEventLoop(ctx context.Context, id uuid.UUID) error {
 	return nil
 }
 
-func (w *AsyncWorker) pushEventAndUpdate(ctx context.Context, instance *domain.Instance, event domain.Event) error {
+func (w *AsyncWorker) pushEventAndUpdate(
+	ctx context.Context, instance *domain.Instance, event domain.Event, errorMsg *string,
+) error {
 	return w.transactor.Transaction(ctx, func(ctx context.Context) error {
 		instance.PendingEvents.Enqueue(&domain.PendingEvent{
 			Id:          uuid.New(),
@@ -100,7 +115,11 @@ func (w *AsyncWorker) pushEventAndUpdate(ctx context.Context, instance *domain.I
 			ExecutedAt:  time.Now(),
 		})
 		if event == domain.EventHandlerFail && instance.LastTransitionId != nil {
-			err := w.transitionRepo.SetError(ctx, *instance.LastTransitionId, "handler failed")
+			errText := defaultHandlerFailMessage
+			if errorMsg != nil {
+				errText = *errorMsg
+			}
+			err := w.transitionRepo.SetError(ctx, *instance.LastTransitionId, errText)
 			if err != nil {
 				return err
 			}

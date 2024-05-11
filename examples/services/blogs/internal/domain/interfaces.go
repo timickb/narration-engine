@@ -12,8 +12,18 @@ type PublicationRepository interface {
 	Update(ctx context.Context, dto *PublicationUpdateDto) error
 }
 
+// BlogRepository Хранилище блогов.
+type BlogRepository interface {
+	Create(ctx context.Context, blog *Blog) error
+	GetById(ctx context.Context, id uuid.UUID) (*Blog, error)
+	Update(ctx context.Context, dto *BlogUpdateDto) error
+}
+
 // BlogUsecase Основной юзкейс сервиса.
 type BlogUsecase interface {
+	BlogCreate(ctx context.Context, blog *Blog) error
+	BlogUpdateStats(ctx context.Context, blogId uuid.UUID, incPublications, incSubscribers bool) error
+	PublicationCreate(ctx context.Context, publication *Publication) error
 	PublicationUpdate(ctx context.Context, dto *PublicationUpdateDto) error
 	PublicationGetById(ctx context.Context, id uuid.UUID) (*Publication, error)
 }

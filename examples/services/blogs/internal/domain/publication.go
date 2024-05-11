@@ -23,6 +23,7 @@ const (
 type Publication struct {
 	Id        uuid.UUID
 	AuthorId  uuid.UUID
+	BlogId    uuid.UUID
 	Title     string
 	Body      string
 	Status    PublicationStatus

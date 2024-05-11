@@ -1,0 +1,21 @@
+@startuml
+
+!$name = "scenario_without_handlers"
+!$version = "1.0"
+
+hide empty description
+
+title Примитивный КА
+
+state Состояние1: blogs.stub()
+state Состояние1: retry=30s,1m,1m,1m
+
+state Состояние2: blogs.stub()
+state Состояние3: blogs.stub()
+
+[*] --> Состояние1
+Состояние1 --> Состояние2: [move1]
+Состояние2 --> Состояние3: [move2]
+Состояние3 --> [*]
+
+@enduml

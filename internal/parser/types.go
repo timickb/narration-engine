@@ -24,6 +24,7 @@ type AddStateDto struct {
 	StateName string
 	Handler   string
 	Delay     string
+	Retry     string
 	Params    map[string]domain.StateParamValue
 }
 

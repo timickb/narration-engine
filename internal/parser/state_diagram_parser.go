@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/timickb/narration-engine/internal/domain"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -40,6 +41,7 @@ func (d *StateDiagram) AddOrUpdateState(dto *AddStateDto) {
 	}
 
 	var delay time.Duration
+	var retries []time.Duration
 	var parseErr error
 
 	if dto.Delay != "" {
@@ -48,10 +50,30 @@ func (d *StateDiagram) AddOrUpdateState(dto *AddStateDto) {
 			panic(fmt.Sprintf("parse state delay: %s", parseErr.Error()))
 		}
 	}
+	if dto.Retry != "" {
+		durations := strings.Split(dto.Retry, ",")
+		retries = make([]time.Duration, len(durations))
+		for i, dur := range durations {
+			parsed, parseErr := time.ParseDuration(dur)
+			if parseErr != nil {
+				panic(fmt.Sprintf("parse state retry: %s", parseErr.Error()))
+			}
+			retries[i] = parsed
+		}
+	}
 
 	for i, state := range d.States.States {
+		// если стейт уже создан - обновляем параметры.
 		if state.Name == dto.StateName {
-			d.States.States[i].Delay = delay
+			if dto.Delay != "" {
+				d.States.States[i].Delay = delay
+			}
+			if dto.Retry != "" {
+				d.States.States[i].Retries = retries
+			}
+			if dto.Handler != "" {
+				d.States.States[i].Handler = dto.Handler
+			}
 			return
 		}
 	}

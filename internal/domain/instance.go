@@ -72,3 +72,18 @@ func (i *Instance) RemoveDelay() {
 func (i *Instance) GetStartAfter() *time.Time {
 	return i.startAfter
 }
+
+// DropRetires Сбросить счетчик использованных попыток ретрая.
+func (i *Instance) DropRetires() {
+	i.Retries = 0
+}
+
+// IncRetries Инкрементировать счетчик использованных попыток ретрая.
+func (i *Instance) IncRetries() {
+	i.Retries++
+}
+
+// SetFailed Пометить экземпляр как аварийно завершенный.
+func (i *Instance) SetFailed() {
+	i.Failed = true
+}

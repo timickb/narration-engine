@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/google/uuid"
-	"github.com/timickb/narration-engine/examples/services/blogs/internal/domain"
+	"github.com/timickb/blogs-example/internal/domain"
 	"github.com/timickb/narration-engine/pkg/utils"
 	"github.com/timickb/narration-engine/pkg/worker"
 	schema "github.com/timickb/narration-engine/schema/v1/gen"

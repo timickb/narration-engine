@@ -1,0 +1,57 @@
+@startuml
+
+!$name = "moderation_scenario"
+!$version = "1.0"
+
+hide empty description
+
+title Модерация публикаций в блоге
+
+state ОбновитьСтатусПубликацииНаReview: blogs.publication_update(status="REVIEW")
+state ОбновитьСтатусПубликацииНаPending: blogs.publication_update(status="PENDING")
+state ОбновитьСтатусПубликацииНаApproved: blogs.publication_update(status="APPROVED")
+state ОбновитьСтатусПубликацииНаDeclined: blogs.publication_update(status="DECLINED")
+
+state ОбновитьСтатусПубликацииНаReview: retry=1m,2m,3m,10m,1h
+state ОбновитьСтатусПубликацииНаPending: retry=1m,2m,3m,10m,1h
+state ОбновитьСтатусПубликацииНаApproved: retry=1m,2m,3m,10m,1h
+state ОбновитьСтатусПубликацииНаDeclined: retry=1m,2m,3m,10m,1h
+
+state ОбновитьСтатистикуБлога: blogs.stats_update
+state ОбновитьСтатистикуБлога: retry=1m,2m,3m,10m,1h
+
+state ОжиданиеОтветаМодератора
+state ОжиданиеПравокОтПользователя
+
+state ОтправитьУведомлениеМодератору: notifications.send_message(data="ctx.moderator_message_data")
+state УведомитьПользователяОбУспехе: notifications.send_message(data="ctx.user_success_data")
+state УведомитьПользователяОбОтказе: notifications.send_message(data="ctx.user_decline_data")
+state УведомитьПользователяОДоработках: notifications.send_message(data="ctx.user_rework_data")
+
+state ОтправитьУведомлениеМодератору: retry=1m,2m,3m,10m,1h
+state УведомитьПользователяОбУспехе: retry=1m,2m,3m,10m,1h
+state УведомитьПользователяОбОтказе: retry=1m,2m,3m,10m,1h
+state УведомитьПользователяОДоработках: retry=1m,2m,3m,10m,1h
+
+[*] --> ОбновитьСтатусПубликацииНаReview
+ОбновитьСтатусПубликацииНаReview --> ОтправитьУведомлениеМодератору
+ОтправитьУведомлениеМодератору --> ОжиданиеОтветаМодератора
+
+ОжиданиеОтветаМодератора ---> ОбновитьСтатусПубликацииНаApproved: [approve]
+ОжиданиеОтветаМодератора --> ОбновитьСтатусПубликацииНаDeclined: [reject]
+ОжиданиеОтветаМодератора --> ОбновитьСтатусПубликацииНаPending: [rework]
+
+ОбновитьСтатусПубликацииНаApproved --> ОбновитьСтатистикуБлога
+ОбновитьСтатусПубликацииНаDeclined --> УведомитьПользователяОбОтказе
+ОбновитьСтатусПубликацииНаPending --> УведомитьПользователяОДоработках
+УведомитьПользователяОДоработках --> ОжиданиеПравокОтПользователя
+
+ОжиданиеПравокОтПользователя ---> ОбновитьСтатусПубликацииНаReview: [edited]
+
+ОбновитьСтатистикуБлога --> УведомитьПользователяОбУспехе
+
+ОбновитьСтатистикуБлога --> ОбновитьСтатусПубликацииНаReview: [handler_fail]
+
+УведомитьПользователяОбУспехе --> [*]
+УведомитьПользователяОбОтказе --> [*]
+@enduml

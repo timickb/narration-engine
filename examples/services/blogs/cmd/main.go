@@ -1,9 +1,10 @@
 package main
 
 import (
-	"github.com/timickb/narration-engine/examples/services/blogs/internal/handler"
-	"github.com/timickb/narration-engine/examples/services/blogs/internal/usecase"
-	"github.com/timickb/narration-engine/examples/services/blogs/repository"
+	"context"
+	"github.com/timickb/blogs-example/internal/handler"
+	"github.com/timickb/blogs-example/internal/usecase"
+	"github.com/timickb/blogs-example/repository"
 	"github.com/timickb/narration-engine/pkg/worker"
 	schema "github.com/timickb/narration-engine/schema/v1/gen"
 	"google.golang.org/grpc"
@@ -13,8 +14,13 @@ import (
 )
 
 func main() {
+	blogRepo := repository.NewBlogRepo()
 	publicationRepo := repository.NewPublicationRepo()
-	blogUsecase := usecase.NewBlogUsecase(publicationRepo)
+	blogUsecase := usecase.NewBlogUsecase(blogRepo, publicationRepo)
+
+	blogUsecase.BlogCreate(context.Background(), SampleBlogFinance)
+	blogUsecase.BlogCreate(context.Background(), SampleBlogFrontend)
+	blogUsecase.BlogCreate(context.Background(), SampleBlogTravel)
 
 	publicationUpdateHandler := handler.NewPublicationUpdateHandler(blogUsecase)
 	stubHandler := handler.NewStubHandler()

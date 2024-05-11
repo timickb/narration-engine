@@ -24,13 +24,10 @@ type StateDiagram Peg {
     contextVarPath string
 
     delay string
-    retryLabelName string
-    retryLabelValue string
-    retryParams string
-    retryAssignLabel string
+    retry string
 }
 
-StateDiagram <- Start (Version / Name / Transition / Title / StateSkin / State / RetryLabel / HideEmptyDescription / Theme / Skinparam / Var / Comment)* End !.
+StateDiagram <- Start (Version / Name / Transition / Title / StateSkin / State / HideEmptyDescription / Theme / Skinparam / Var / Comment)* End !.
 
 identifier <- [a-zA-Z0-9_]+
 anyChar <- [^\r\n :-><\t/]
@@ -40,7 +37,7 @@ SP <- ( ' ' / '\t' / '\\n' )*
 
 Word <- < anyChar+ > { p.word = text }
 Tag <- '<<' < identifier > '>>' { p.AddTag(text) }
-Duration <- < [1-9][0-9]* ('s' / 'm' / 'h' / 'd') >
+Duration <- [1-9][0-9]* ('s' / 'm' / 'h' / 'd')
 
 Title <- 'title' SP < anySequence > NL { p.Title = text }
 Name <- '!$name' SP '=' SP '"' < identifier > '"' NL { p.setName(text) }
@@ -70,14 +67,8 @@ TerminalState <- '[*]'
 StateFrom <- ( TerminalState { p.stateFrom = "START" } / Word { p.stateFrom = p.word } )
 StateTo <- ( TerminalState { p.stateTo = "END" } / Word { p.stateTo = p.word } )
 StateName <- Word { p.stateName = p.word }
-Delay <- 'delay=' Duration { p.delay = text }
-
-RetryLabel <- RetryLabelName SP '=' SP '"' < RetryLabelValue > '"' NL { p.AddRetryLabel(p.retryLabelName, p.retryLabelValue) }
-RetryLabelName <- '!$retry_' < identifier > { p.retryLabelName = text }
-RetryLabelValue <- RetryParams { p.retryLabelValue = text }
-Retry <- 'retry=' < (RetryParams / RetryAssignLabel) > NL?
-RetryAssignLabel <- < identifier > { p.retryAssignLabel = text }
-RetryParams <- < ([0-9]+[smhd]?[:])?([0-9]+[smhd])([,][0-9]+[smhd])+([,][\\.][\\.][\\.])? > { p.retryParams = text }
+Delay <- 'delay=' < Duration > { p.delay = text }
+Retry <- 'retry=' < Duration (',' Duration)+ > { p.retry = text }
 
 contextVarPath <- 'ctx' ('.' identifier)+
 ParamName <- < identifier > { p.paramName = text }
@@ -98,6 +89,7 @@ State <- 'state' SP StateName SP (Tag SP?)* SP (':' SP (Delay / Retry / Delay SP
             Handler: p.handlerName,
             Params: p.params,
             Delay: p.delay,
+            Retry: p.retry,
         }
         p.AddOrUpdateState(dto);
         p.clearState()

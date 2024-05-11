@@ -34,7 +34,9 @@ func (w *AsyncWorker) performTransition(
 		}
 	}
 	if transition == nil {
-		logger.Error("No transition found for event, break execution")
+		logger.Warn("No transition found for event, break execution")
+		// Убрать событие из очереди - переход по нему уже никогда не произойдет.
+		instance.PendingEvents.Dequeue()
 		return domain.TransitionResultBreak, err
 	}
 	nextState := transition.To
@@ -53,6 +55,7 @@ func (w *AsyncWorker) performTransition(
 		EventName:   event.EventName,
 		EventParams: event.EventParams,
 	})
+	instance.DropRetires()
 	instance.PerformTransition(nextState, transitionId)
 	instance.PendingEvents.Dequeue()
 

@@ -6,8 +6,13 @@ import (
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 	"github.com/timickb/narration-engine/internal/domain"
+	"github.com/timickb/narration-engine/pkg/utils"
 	"strings"
 	"time"
+)
+
+const (
+	errorMsgCtxKey = "error_message"
 )
 
 func (w *AsyncWorker) executeHandler(
@@ -18,14 +23,10 @@ func (w *AsyncWorker) executeHandler(
 		WithField("instance", instance.Id).
 		WithField("stateFrom", instance.PreviousState.Name).
 		WithField("stateTo", instance.CurrentState.Name).
+		WithField("event", eventName).
 		WithField("handler", instance.CurrentState.Name)
 	nextState := instance.CurrentState
-	handlerParts := strings.Split(nextState.Handler, ".")
-	if len(handlerParts) != 2 {
-		return fmt.Errorf("invalid handler notation")
-	}
-	serviceName := handlerParts[0]
-	handlerName := handlerParts[1]
+	serviceName := strings.Split(nextState.Handler, ".")[0]
 
 	// 1. Найти сервис
 	service, ok := w.handlerAdapters[serviceName]
@@ -36,7 +37,7 @@ func (w *AsyncWorker) executeHandler(
 	// 2. Выполнить обработчик.
 	logger.Info("Calling handler...")
 	result, err := service.CallHandler(ctx, &domain.CallHandlerDto{
-		HandlerName: handlerName,
+		HandlerName: nextState.Handler,
 		StateName:   nextState.Name,
 		InstanceId:  instance.Id,
 		Context:     instance.Context.String(),
@@ -44,7 +45,8 @@ func (w *AsyncWorker) executeHandler(
 		EventName:   eventName,
 	})
 	if err != nil {
-		logger.Error("Handler invocation failed")
+		instance.Context.SetRootValue(errorMsgCtxKey, err.Error())
+		logger.Error("Handler invocation failed: %s", err.Error())
 		return fmt.Errorf("handlerAdapter.CallHandler: %w", err)
 	}
 	logger.Info("Handler had invoked with success.")
@@ -64,5 +66,32 @@ func (w *AsyncWorker) executeHandler(
 		External:    false,
 	})
 
+	// 5. Установить флаг выполненности обработчика состояния.
+	instance.CurrentStateStatus = domain.StateStatusHandlerExecuted
+
+	logger.Debug("Context after handler execution: %s", instance.Context.String())
 	return nil
+}
+
+func (w *AsyncWorker) handleHandlerErr(
+	ctx context.Context, logger *log.Entry, instance *domain.Instance, handlerErr error,
+) (err error, breakLoop bool) {
+	retry, retryPresents := instance.CurrentState.GetNextRetryIfPresents(instance)
+
+	if retryPresents {
+		logger.Info("Handler failed, but one more retry presents. Use it and delay execution.")
+		instance.IncRetries()
+		instance.SetDelay(retry)
+		if err = w.instanceRepo.Update(ctx, instance); err != nil {
+			return fmt.Errorf("instanceRepo.Update: %w", err), false
+		}
+		return nil, true
+	}
+
+	logger.Error("No retries left for state. Push event handler_fail due to handler execution error")
+	err = w.pushEventAndUpdate(ctx, instance, domain.EventHandlerFail, utils.Ptr(handlerErr.Error()))
+	if err != nil {
+		return fmt.Errorf("push event handler fail: %w", err), false
+	}
+	return nil, false
 }

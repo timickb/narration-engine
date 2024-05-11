@@ -33,7 +33,8 @@ func (r *transitionRepo) Save(ctx context.Context, dto *domain.SaveTransitionDto
 func (r *transitionRepo) SetError(ctx context.Context, transitionId uuid.UUID, errText string) error {
 	query := r.db.WithTxSupport(ctx).Model(&models.DbTransition{}).
 		Where("id = ?", transitionId).
-		UpdateColumn("error", errText)
+		UpdateColumn("error", errText).
+		UpdateColumn("failed", true)
 	if query.Error != nil {
 		return fmt.Errorf("set error to transition: %w", query.Error)
 	}

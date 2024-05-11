@@ -41,6 +41,11 @@ func (c *InstanceContext) GetValue(path string) (interface{}, error) {
 	return gjson.Get(string(jsonStr), path).Value(), nil
 }
 
+// SetRootValue Установить значение ключа на первом уровне.
+func (c *InstanceContext) SetRootValue(key string, value interface{}) {
+	c.data[key] = value
+}
+
 // String Получить JSON-строку контекста.
 func (c *InstanceContext) String() string {
 	res, _ := json.Marshal(c.data)
