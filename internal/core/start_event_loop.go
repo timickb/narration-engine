@@ -38,6 +38,7 @@ func (w *AsyncWorker) startEventLoop(ctx context.Context, id uuid.UUID) error {
 		return fmt.Errorf("config.GetLoadedScenario: %w", err)
 	}
 	instance.Scenario = scenario
+	fillStatesFromScenarioModel(instance, scenario)
 
 	// Если обработчик состояния еще не выполнен - вызываем его.
 	if instance.CurrentStateStatus == domain.StateStatusWaitingForHandler {
@@ -126,4 +127,15 @@ func (w *AsyncWorker) pushEventAndUpdate(
 		}
 		return w.instanceRepo.Update(ctx, instance)
 	})
+}
+
+func fillStatesFromScenarioModel(instance *domain.Instance, scenario *domain.Scenario) {
+	for _, state := range scenario.States {
+		if instance.CurrentState != nil && state.Name == instance.CurrentState.Name {
+			instance.CurrentState = state
+		}
+		if instance.PreviousState != nil && state.Name == instance.PreviousState.Name {
+			instance.PreviousState = state
+		}
+	}
 }

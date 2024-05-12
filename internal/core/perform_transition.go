@@ -37,6 +37,11 @@ func (w *AsyncWorker) performTransition(
 		logger.Warn("No transition found for event, break execution")
 		// Убрать событие из очереди - переход по нему уже никогда не произойдет.
 		instance.PendingEvents.Dequeue()
+
+		// Если событие вызвано ошибкой обработчика, значит, экземпляр считается аварийно завершенным.
+		if event.EventName == domain.EventHandlerFail.Name {
+			instance.SetFailed()
+		}
 		return domain.TransitionResultBreak, err
 	}
 	nextState := transition.To

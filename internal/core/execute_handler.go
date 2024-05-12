@@ -24,7 +24,7 @@ func (w *AsyncWorker) executeHandler(
 		WithField("stateFrom", instance.PreviousState.Name).
 		WithField("stateTo", instance.CurrentState.Name).
 		WithField("event", eventName).
-		WithField("handler", instance.CurrentState.Name)
+		WithField("handler", instance.CurrentState.Handler)
 	nextState := instance.CurrentState
 	serviceName := strings.Split(nextState.Handler, ".")[0]
 
