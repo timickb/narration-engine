@@ -1,6 +1,7 @@
 package worker
 
 import (
+	"encoding/json"
 	schema "github.com/timickb/narration-engine/schema/v1/gen"
 )
 
@@ -16,5 +17,18 @@ func DefaultContinueResponse() (*schema.HandleResponse, error) {
 		NextEvent:        EventContinue,
 		NextEventPayload: "{}",
 		DataToContext:    "{}",
+	}, nil
+}
+
+func SendEventAndMergeData(event string, data interface{}) (*schema.HandleResponse, error) {
+	marshalled, err := json.Marshal(data)
+	if err != nil {
+		return nil, err
+	}
+	return &schema.HandleResponse{
+		Status:           &schema.Status{},
+		NextEvent:        event,
+		NextEventPayload: "{}",
+		DataToContext:    string(marshalled),
 	}, nil
 }
