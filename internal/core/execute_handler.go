@@ -46,7 +46,7 @@ func (w *AsyncWorker) executeHandler(
 	})
 	if err != nil {
 		instance.Context.SetRootValue(errorMsgCtxKey, err.Error())
-		logger.Error("Handler invocation failed: %s", err.Error())
+		logger.Errorf("Handler invocation failed: %s", err.Error())
 		return fmt.Errorf("handlerAdapter.CallHandler: %w", err)
 	}
 	logger.Info("Handler had invoked with success.")
@@ -69,7 +69,7 @@ func (w *AsyncWorker) executeHandler(
 	// 5. Установить флаг выполненности обработчика состояния.
 	instance.CurrentStateStatus = domain.StateStatusHandlerExecuted
 
-	logger.Debug("Context after handler execution: %s", instance.Context.String())
+	logger.Debugf("Context after handler execution: %s", instance.Context.String())
 	return nil
 }
 
