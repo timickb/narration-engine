@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/google/uuid"
+	log "github.com/sirupsen/logrus"
 	"github.com/timickb/blogs-example/internal/domain"
 	"github.com/timickb/narration-engine/pkg/utils"
 	"github.com/timickb/narration-engine/pkg/worker"
@@ -33,6 +34,10 @@ type PublicationUpdateRequest struct {
 func (h *publicationUpdateHandler) HandleState(
 	ctx context.Context, req *schema.HandleRequest,
 ) (*schema.HandleResponse, error) {
+
+	log.Info("Called blogs.publication_update")
+	log.Infof("Context received: %s", req.Context)
+	log.Infof("Event params received: %s", req.EventParams)
 
 	data, err := worker.UnmarshallRequestBody[PublicationUpdateRequest](req)
 	if err != nil {

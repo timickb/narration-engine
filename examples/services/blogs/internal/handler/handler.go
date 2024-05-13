@@ -2,8 +2,8 @@ package handler
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"github.com/pkg/errors"
 	"github.com/timickb/narration-engine/pkg/utils"
 	"github.com/timickb/narration-engine/pkg/worker"
 	schema "github.com/timickb/narration-engine/schema/v1/gen"

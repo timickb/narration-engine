@@ -1,0 +1,19 @@
+@startuml
+
+!$name = "blog_create"
+!$version = "1.0"
+
+title Создание блога
+
+state СоздатьБлог: blogs.blog_create
+state СоздатьСчетАвтора: payments.account_create
+state СоздатьСчетАвтора: retry=30s,3m,5m,20m,1h
+state ОтправитьУведомлениеОбУспехе: notifications.send_blog_created_mail
+
+[*] --> СоздатьБлог
+СоздатьБлог --> СоздатьСчетАвтора
+СоздатьСчетАвтора --> ОтправитьУведомлениеОбУспехе
+
+ОтправитьУведомлениеОбУспехе --> [*]
+
+@enduml

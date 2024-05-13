@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/timickb/narration-engine/pkg/worker"
 	schema "github.com/timickb/narration-engine/schema/v1/gen"
-	"notifications/internal/domain"
+	"github.com/timickb/notifications-example/internal/domain"
 )
 
 type sendMessageHandler struct {

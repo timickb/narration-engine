@@ -21,8 +21,9 @@ type BlogRepository interface {
 
 // BlogUsecase Основной юзкейс сервиса.
 type BlogUsecase interface {
+	BlogGetById(ctx context.Context, id uuid.UUID) (*Blog, error)
 	BlogCreate(ctx context.Context, blog *Blog) error
-	BlogUpdateStats(ctx context.Context, blogId uuid.UUID, incPublications, incSubscribers bool) error
+	BlogUpdateStats(ctx context.Context, dto *BlogUpdateStatsDto) error
 	PublicationCreate(ctx context.Context, publication *Publication) error
 	PublicationUpdate(ctx context.Context, dto *PublicationUpdateDto) error
 	PublicationGetById(ctx context.Context, id uuid.UUID) (*Publication, error)

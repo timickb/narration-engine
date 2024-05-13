@@ -23,7 +23,7 @@ func New(handlers map[string]worker.Worker) *StateHandler {
 func (h *StateHandler) Handle(ctx context.Context, req *schema.HandleRequest) (*schema.HandleResponse, error) {
 	resp := &schema.HandleResponse{Status: &schema.Status{}}
 
-	handler, ok := h.handlers[req.State]
+	handler, ok := h.handlers[req.Handler]
 	if !ok {
 		return resp, errors.New(fmt.Sprintf("handler for state %s is not registered", req.State))
 	}

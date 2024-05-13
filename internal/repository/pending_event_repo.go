@@ -30,9 +30,3 @@ func (r *pendingEventRepo) Create(ctx context.Context, dto *domain.CreatePending
 	}
 	return eventId, nil
 }
-
-// AddExternal - добавить в очередь внешнее событие (через API).
-func (r *pendingEventRepo) AddExternal(ctx context.Context, dto *domain.EventSendDto) error {
-	// TODO: implement
-	panic("implement me")
-}

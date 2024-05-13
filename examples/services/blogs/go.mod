@@ -2,9 +2,11 @@ module github.com/timickb/blogs-example
 
 go 1.22.3
 
+replace github.com/timickb/narration-engine => ../../../
+
 require (
 	github.com/google/uuid v1.6.0
-	github.com/pkg/errors v0.9.1
+	github.com/sirupsen/logrus v1.9.3
 	github.com/timickb/narration-engine v0.0.0-20240509221627-7e6349345c8d
 	google.golang.org/grpc v1.59.0
 )

@@ -8,11 +8,12 @@ import (
 	"github.com/timickb/narration-engine/internal/builder"
 	"github.com/timickb/narration-engine/internal/config"
 	"github.com/timickb/narration-engine/pkg/utils"
-	"os"
 	"os/signal"
 	"syscall"
 	"time"
 )
+
+const shutdownTimeout = time.Second * 5
 
 func main() {
 	log.SetLevel(log.DebugLevel)
@@ -36,7 +37,7 @@ func main() {
 }
 
 func mainNoExit(cfgPath string) error {
-	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM, syscall.SIGINT, syscall.SIGKILL)
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
 	defer cancel()
 
 	cfg, err := config.NewFromFile(ctx, cfgPath)
@@ -62,18 +63,10 @@ func mainNoExit(cfgPath string) error {
 		}
 	}()
 
-	select {
-	case <-ctx.Done():
-		log.Info("Stopping engine gracefully..")
-		cancel()
-		time.Sleep(time.Second * 3)
-
-		if err := b.GracefulStop(); err != nil {
-			log.Fatalf("Graceful stop failed")
-		} else {
-			log.Info("Stopped.")
-		}
-	}
-
+	// Завершение работы сервиса
+	<-ctx.Done()
+	log.Info("Stopping engine gracefully..")
+	b.WaitGroup().Wait()
+	log.Info("Engine stopped.")
 	return nil
 }

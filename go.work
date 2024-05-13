@@ -1,8 +1,0 @@
-go 1.22.3
-
-use (
-	.
-	examples/services/notifications
-	examples/services/orders
-	examples/services/blogs
-)

@@ -20,11 +20,11 @@ services:
     build:
       dockerfile: blogs.Dockerfile
 
-  orders:
+  payments:
     ports:
       - "5002:5002"
     build:
-      dockerfile: orders.Dockerfile
+      dockerfile: payments.Dockerfile
 
   notifications:
     ports:

@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 	"github.com/timickb/narration-engine/internal/domain"
+	"sync"
 )
 
 type AsyncWorker struct {
@@ -15,6 +16,7 @@ type AsyncWorker struct {
 	config          AsyncWorkerConfig
 	handlerAdapters map[string]HandlerAdapter
 	instanceChan    chan uuid.UUID
+	waitGroup       *sync.WaitGroup
 	// Порядковый номер обработчика у InstanceRunner'а.
 	orderNumber int
 }
@@ -26,6 +28,7 @@ func createAsyncWorker(
 	config AsyncWorkerConfig,
 	handlerAdapters map[string]HandlerAdapter,
 	instanceChan chan uuid.UUID,
+	waitGroup *sync.WaitGroup,
 	orderNumber int,
 ) *AsyncWorker {
 	return &AsyncWorker{
@@ -35,6 +38,7 @@ func createAsyncWorker(
 		config:          config,
 		handlerAdapters: handlerAdapters,
 		instanceChan:    instanceChan,
+		waitGroup:       waitGroup,
 		orderNumber:     orderNumber,
 	}
 }
@@ -47,10 +51,12 @@ func (w *AsyncWorker) Start(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			logger.Info("Received context done", w.orderNumber)
+			w.waitGroup.Done()
 			return
 		case instanceId, ok := <-w.instanceChan:
 			if !ok {
 				logger.Info("Instance chan closed, stop work", w.orderNumber)
+				w.waitGroup.Done()
 				return
 			}
 			if err := w.startEventLoop(ctx, instanceId); err != nil {

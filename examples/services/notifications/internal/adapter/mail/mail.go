@@ -3,7 +3,7 @@ package mail
 import (
 	"context"
 	log "github.com/sirupsen/logrus"
-	"notifications/internal/domain"
+	"github.com/timickb/notifications-example/internal/domain"
 )
 
 // Adapter - заглушка.

@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	log "github.com/sirupsen/logrus"
 	schema "github.com/timickb/narration-engine/schema/v1/gen"
 )
 
@@ -18,6 +19,11 @@ func (h *stubHandler) Name() string {
 func (h *stubHandler) HandleState(
 	ctx context.Context, req *schema.HandleRequest,
 ) (*schema.HandleResponse, error) {
+
+	log.Info("Called blogs.stub")
+	log.Infof("Context received: %s", req.Context)
+	log.Infof("Event params received: %s", req.EventParams)
+
 	return &schema.HandleResponse{
 		Status:           &schema.Status{},
 		NextEvent:        "continue",

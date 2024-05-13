@@ -2,7 +2,7 @@ package handler
 
 import (
 	"context"
-	"notifications/internal/domain"
+	"github.com/timickb/notifications-example/internal/domain"
 )
 
 // MailAdapter Адаптер почтового сервиса.

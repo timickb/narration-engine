@@ -19,6 +19,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
 	"net"
+	"sync"
 )
 
 // Builder DI контейнер приложения.
@@ -33,11 +34,14 @@ type Builder struct {
 	runner        *core.InstanceRunner
 	handlers      map[string]*handler.Handler
 	handlersConns []*grpc.ClientConn
+	wg            *sync.WaitGroup
 }
 
 func New(ctx context.Context, cfg *config.Config) (*Builder, error) {
 	b := &Builder{ctx: ctx, cfg: cfg}
 	b.log = log.WithContext(ctx).Logger
+	b.wg = &sync.WaitGroup{}
+	b.wg.Add(cfg.AsyncWorker.Count + 1)
 
 	if err := b.initDatabase(); err != nil {
 		return nil, fmt.Errorf("init database: %w", err)
@@ -52,6 +56,10 @@ func New(ctx context.Context, cfg *config.Config) (*Builder, error) {
 	b.buildInstanceRunner()
 
 	return b, nil
+}
+
+func (b *Builder) WaitGroup() *sync.WaitGroup {
+	return b.wg
 }
 
 func (b *Builder) ServeGrpc() error {
@@ -106,6 +114,7 @@ func (b *Builder) buildInstanceRunner() {
 		transitionRepo,
 		handlerAdapters,
 		instanceChan,
+		b.wg,
 	)
 }
 

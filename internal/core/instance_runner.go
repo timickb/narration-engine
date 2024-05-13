@@ -6,15 +6,9 @@ import (
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 	"github.com/timickb/narration-engine/internal/domain"
+	"sync"
 	"time"
 )
-
-// InstanceRunnerConfig Конфигурация для InstanceRunner.
-type InstanceRunnerConfig interface {
-	GetInstancesBatchSize() int
-	GetInstanceFetchingInterval() time.Duration
-	GetAsyncWorkersCount() int
-}
 
 // InstanceRunner Главный воркер сервиса, ответственный за вытягивание экземпляров к выполнению из БД.
 type InstanceRunner struct {
@@ -25,6 +19,7 @@ type InstanceRunner struct {
 	transitionRepo    TransitionRepository
 	handlerAdapters   map[string]HandlerAdapter
 	instanceChan      chan uuid.UUID
+	waitGroup         *sync.WaitGroup
 }
 
 func NewInstanceRunner(
@@ -35,6 +30,7 @@ func NewInstanceRunner(
 	transitionRepo TransitionRepository,
 	handlerAdapters map[string]HandlerAdapter,
 	instanceChan chan uuid.UUID,
+	waitGroup *sync.WaitGroup,
 ) *InstanceRunner {
 	return &InstanceRunner{
 		instanceRunnerCfg: instanceRunnerCfg,
@@ -44,6 +40,7 @@ func NewInstanceRunner(
 		transitionRepo:    transitionRepo,
 		handlerAdapters:   handlerAdapters,
 		instanceChan:      instanceChan,
+		waitGroup:         waitGroup,
 	}
 }
 
@@ -60,6 +57,7 @@ func (r *InstanceRunner) Start(ctx context.Context) {
 				r.asyncWorkerCfg,
 				r.handlerAdapters,
 				r.instanceChan,
+				r.waitGroup,
 				orderNumber,
 			).Start(ctx)
 		}(i)
@@ -81,11 +79,16 @@ func (r *InstanceRunner) Start(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			logger.Info("Received context done")
+			r.waitGroup.Done()
 			return
 		case <-ticker.C:
 			// Stub
 		}
 	}
+}
+
+func (r *InstanceRunner) Stop(shutdownCtx context.Context) {
+
 }
 
 func (r *InstanceRunner) fetchWaitingInstancesIds(ctx context.Context) ([]uuid.UUID, error) {

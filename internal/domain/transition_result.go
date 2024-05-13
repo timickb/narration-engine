@@ -10,6 +10,4 @@ const (
 	TransitionResultPendingHandler = "PENDING_HANDLER"
 	// TransitionResultCompleted Переход осуществлен, можно перейти к следующему событию.
 	TransitionResultCompleted = "COMPLETED"
-	// TransitionResultInstanceDelayed Переход осуществлен, назначена задержка выполнения экземпляра.
-	TransitionResultInstanceDelayed = "DELAYED"
 )

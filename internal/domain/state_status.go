@@ -8,6 +8,4 @@ const (
 	StateStatusWaitingForHandler StateStatus = "WAITING_FOR_HANDLER"
 	// StateStatusHandlerExecuted Обработчик выполнен.
 	StateStatusHandlerExecuted StateStatus = "HANDLER_EXECUTED"
-	// StateStatusHandlerFailed Выполнение обработчика завершено с ошибкой.
-	StateStatusHandlerFailed StateStatus = "HANDLER_FAILED"
 )

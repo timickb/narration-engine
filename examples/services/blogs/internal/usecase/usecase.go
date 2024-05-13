@@ -42,6 +42,14 @@ func (u *BlogUsecase) PublicationGetById(ctx context.Context, id uuid.UUID) (*do
 	return publication, nil
 }
 
+func (u *BlogUsecase) BlogGetById(ctx context.Context, id uuid.UUID) (*domain.Blog, error) {
+	blog, err := u.blogRepo.GetById(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("blogRepo.GetById: %w", err)
+	}
+	return blog, nil
+}
+
 func (u *BlogUsecase) BlogCreate(ctx context.Context, blog *domain.Blog) error {
 	if err := u.blogRepo.Create(ctx, blog); err != nil {
 		return fmt.Errorf("blogRepo.Create: %w", err)
@@ -49,21 +57,24 @@ func (u *BlogUsecase) BlogCreate(ctx context.Context, blog *domain.Blog) error {
 	return nil
 }
 
-func (u *BlogUsecase) BlogUpdateStats(ctx context.Context, blogId uuid.UUID, incPublications, incSubscribers bool) error {
-	blog, err := u.blogRepo.GetById(ctx, blogId)
+func (u *BlogUsecase) BlogUpdateStats(ctx context.Context, dto *domain.BlogUpdateStatsDto) error {
+	blog, err := u.blogRepo.GetById(ctx, dto.Id)
 	if err != nil {
 		return fmt.Errorf("blogRepo.GetById: %w", err)
 	}
 
-	dto := &domain.BlogUpdateDto{Id: blogId}
-	if incSubscribers {
-		dto.SubscribersCount = utils.Ptr(blog.SubscribersCount + 1)
+	updateDto := &domain.BlogUpdateDto{Id: dto.Id}
+	if dto.IncSubscribers {
+		updateDto.SubscribersCount = utils.Ptr(blog.SubscribersCount + 1)
 	}
-	if incPublications {
-		dto.PublicationsCount = utils.Ptr(blog.PublicationsCount + 1)
+	if dto.IntPublications {
+		updateDto.PublicationsCount = utils.Ptr(blog.PublicationsCount + 1)
+	}
+	if dto.IncDonations {
+		updateDto.DonationsCount = utils.Ptr(blog.DonationsCount + 1)
 	}
 
-	if err = u.blogRepo.Update(ctx, dto); err != nil {
+	if err = u.blogRepo.Update(ctx, updateDto); err != nil {
 		return fmt.Errorf("blogRepo.Update")
 	}
 	return nil

@@ -1,0 +1,27 @@
+@startuml
+
+!$name = "blog_donation"
+!$version = "1.0"
+
+title Пожертвование блогу
+
+state СоздатьПлатеж: payments.invoice_create
+state СоздатьПлатеж: retry=1m,3m,7m,30m
+state ПополнитьСчетАвтора: payments.account_add_funds
+state ВосстановитьСчетАвтора: payments.account_remove_funds
+state УвеличитьЧислоДонатов: blogs.stats_update(inc_donations="true")
+
+state ОтправитьПисьмоАвтору: notifications.send_donation_received_mail
+state ОтправитьПисьмоДонатеру: notifications.send_donation_sent_mail
+
+[*] --> СоздатьПлатеж
+СоздатьПлатеж --> ПополнитьСчетАвтора
+ПополнитьСчетАвтора --> УвеличитьЧислоДонатов
+УвеличитьЧислоДонатов --> ОтправитьПисьмоАвтору
+УвеличитьЧислоДонатов --> ВосстановитьСчетАвтора: [handler_fail]
+ОтправитьПисьмоАвтору --> ОтправитьПисьмоДонатеру
+
+ОтправитьПисьмоДонатеру --> [*]
+ВосстановитьСчетАвтора --> [*]
+
+@enduml
