@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	jsonpatch "github.com/evanphx/json-patch"
 	schema "github.com/timickb/narration-engine/schema/v1/gen"
 )
 
@@ -15,7 +16,11 @@ type Worker interface {
 
 func UnmarshallRequestBody[T any](req *schema.HandleRequest) (*T, error) {
 	var result T
-	if err := json.Unmarshal([]byte(req.Context), &result); err != nil {
+	merged, err := jsonpatch.MergePatch([]byte(req.Context), []byte(req.EventParams))
+	if err != nil {
+		return nil, err
+	}
+	if err := json.Unmarshal(merged, &result); err != nil {
 		return nil, fmt.Errorf("unmarshall request context: %w", err)
 	}
 	return &result, nil

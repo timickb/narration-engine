@@ -38,13 +38,13 @@ var (
 )
 
 func TestInstance_PerformTransition(t *testing.T) {
-	testInstance1.PerformTransition(testNextState)
+	testInstance1.PerformTransition(testNextState, uuid.New())
 
 	assert.Equal(t, testCurrentState, testInstance1.PreviousState)
 	assert.Equal(t, testNextState, testInstance1.CurrentState)
 	assert.Equal(t, StateStatusWaitingForHandler, testInstance1.CurrentStateStatus)
 
-	testInstance1.PerformTransition(testNextStateWithoutHandler)
+	testInstance1.PerformTransition(testNextStateWithoutHandler, uuid.New())
 	assert.Equal(t, testNextState, testInstance1.PreviousState)
 	assert.Equal(t, testNextStateWithoutHandler, testInstance1.CurrentState)
 	assert.Equal(t, StateStatusHandlerExecuted, testInstance1.CurrentStateStatus)

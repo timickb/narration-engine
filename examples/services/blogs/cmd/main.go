@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	SampleBlogTravel = &domain.Blog{
+	sampleBlogTravel = &domain.Blog{
 		Id:                uuid.MustParse("12434cd2-0eeb-11ef-b3a0-cf5d00058889"),
 		AuthorId:          uuid.MustParse("1adc580c-0eeb-11ef-8e57-57f257f46cf1"),
 		AuthorEmail:       "somebody1@somewhere.com",
@@ -29,7 +29,7 @@ var (
 		UpdatedAt:         time.Now().Add(-time.Hour),
 	}
 
-	SampleBlogFrontend = &domain.Blog{
+	sampleBlogFrontend = &domain.Blog{
 		Id:                uuid.MustParse("4001d210-0eeb-11ef-a41f-071635578df5"),
 		AuthorId:          uuid.MustParse("43c47d58-0eeb-11ef-9766-d7668da30418"),
 		AuthorEmail:       "somebody2@somewhere.com",
@@ -41,7 +41,7 @@ var (
 		UpdatedAt:         time.Now().Add(-time.Hour),
 	}
 
-	SampleBlogFinance = &domain.Blog{
+	sampleBlogFinance = &domain.Blog{
 		Id:                uuid.MustParse("66071ee8-0eeb-11ef-8aa6-c7962b59b80e"),
 		AuthorId:          uuid.MustParse("6b824942-0eeb-11ef-a3d5-af8a165635dd"),
 		AuthorEmail:       "somebody3@somewhere.com",
@@ -52,16 +52,29 @@ var (
 		CreatedAt:         time.Now().Add(-time.Hour),
 		UpdatedAt:         time.Now().Add(-time.Hour),
 	}
+
+	sampleFinancePublication = &domain.Publication{
+		Id:        uuid.MustParse("f27b7b1a-12da-11ef-89a6-cb3a18c1abb8"),
+		AuthorId:  sampleBlogFinance.AuthorId,
+		BlogId:    sampleBlogFinance.Id,
+		Title:     "Первая статья",
+		Body:      "...",
+		Status:    domain.PublicationStatusReview,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
 )
 
 func main() {
+	ctx := context.Background()
 	blogRepo := repository.NewBlogRepo()
 	publicationRepo := repository.NewPublicationRepo()
 	blogUsecase := usecase.NewBlogUsecase(blogRepo, publicationRepo)
 
-	blogUsecase.BlogCreate(context.Background(), SampleBlogFinance)
-	blogUsecase.BlogCreate(context.Background(), SampleBlogFrontend)
-	blogUsecase.BlogCreate(context.Background(), SampleBlogTravel)
+	blogUsecase.BlogCreate(ctx, sampleBlogFinance)
+	blogUsecase.BlogCreate(ctx, sampleBlogFrontend)
+	blogUsecase.BlogCreate(ctx, sampleBlogTravel)
+	blogUsecase.PublicationCreate(ctx, sampleFinancePublication)
 
 	publicationUpdateHandler := handler.NewPublicationUpdateHandler(blogUsecase)
 	statsUpdateHandler := handler.NewStatsUpdateHandler(blogUsecase)

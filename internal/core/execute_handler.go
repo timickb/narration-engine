@@ -2,6 +2,7 @@ package core
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
@@ -34,6 +35,12 @@ func (w *AsyncWorker) executeHandler(
 		return fmt.Errorf("service %s is not registered in handlers", serviceName)
 	}
 
+	// 2. Собрать параметры из состояния.
+	params, err := w.buildHandlerParams(instance, nextState)
+	if err != nil {
+		return fmt.Errorf("buildHandlerParams: %w", err)
+	}
+
 	// 2. Выполнить обработчик.
 	logger.Info("Calling handler...")
 	result, err := service.CallHandler(ctx, &domain.CallHandlerDto{
@@ -41,7 +48,7 @@ func (w *AsyncWorker) executeHandler(
 		StateName:   nextState.Name,
 		InstanceId:  instance.Id,
 		Context:     instance.Context.String(),
-		EventParams: eventParams,
+		EventParams: params,
 		EventName:   eventName,
 	})
 	if err != nil {
@@ -94,4 +101,25 @@ func (w *AsyncWorker) handleHandlerErr(
 		return fmt.Errorf("push event handler fail: %w", err), false
 	}
 	return nil, false
+}
+
+func (w *AsyncWorker) buildHandlerParams(instance *domain.Instance, nextState *domain.State) (string, error) {
+	result := make(map[string]interface{})
+	for paramName, paramValue := range nextState.Params {
+		ctxVar, presents := strings.CutPrefix(paramValue.Value, "ctx.")
+		if presents {
+			ctxValue, err := instance.Context.GetValue(ctxVar)
+			if err != nil {
+				return "", fmt.Errorf("parse path to context value: %w", err)
+			}
+			result[paramName] = ctxValue
+		} else {
+			result[paramName] = paramValue
+		}
+	}
+	marshalled, err := json.Marshal(result)
+	if err != nil {
+		return "", fmt.Errorf("marshal handler params to json: %w", err)
+	}
+	return string(marshalled), nil
 }

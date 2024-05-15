@@ -133,10 +133,14 @@ func (r *instanceRepo) GetWaitingIds(ctx context.Context, limit int) ([]uuid.UUI
 // GetById Получить данные экземпляра по идентификатору.
 func (r *instanceRepo) GetById(ctx context.Context, id uuid.UUID) (*domain.Instance, error) {
 	var instance models.DbInstance
-	if err := r.db.WithTxSupport(ctx).Take(&instance).Error; err != nil {
+	if err := r.db.WithTxSupport(ctx).Where("id = ?", id).Take(&instance).Error; err != nil {
 		return nil, fmt.Errorf("get instance by id: %w", err)
 	}
-	return &domain.Instance{}, nil
+	mappedInstance, err := instance.ToDomain()
+	if err != nil {
+		return nil, fmt.Errorf("get instance by id: %w", err)
+	}
+	return mappedInstance, nil
 }
 
 // IsKeyBlocked Проверить, присутствует ли блокировка ключа в каком-нибудь экземпляре.

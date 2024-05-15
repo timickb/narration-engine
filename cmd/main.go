@@ -10,10 +10,7 @@ import (
 	"github.com/timickb/narration-engine/pkg/utils"
 	"os/signal"
 	"syscall"
-	"time"
 )
-
-const shutdownTimeout = time.Second * 5
 
 func main() {
 	log.SetLevel(log.DebugLevel)

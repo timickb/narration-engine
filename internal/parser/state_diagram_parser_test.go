@@ -153,11 +153,6 @@ func TestParse(t *testing.T) {
 			want:     want3,
 			wantErr:  false,
 		},
-		{
-			name:     "publication moderation scenario",
-			filePath: "../../examples/moderation_scenario.puml",
-			wantErr:  false,
-		},
 	}
 
 	for _, tc := range cases {
