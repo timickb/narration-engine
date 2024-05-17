@@ -14,20 +14,32 @@ services:
       POSTGRES_DB: go-stateflow
       POSTGRES_HOST_AUTH_METHOD: trust
 
+  engine:
+    restart: on-failure
+    ports:
+      - "2140:2140"
+    depends_on:
+      - postgres_db
+    build:
+      dockerfile: ./Dockerfile
+
   blogs:
     ports:
       - "5003:5003"
     build:
-      dockerfile: blogs.Dockerfile
+      context: ./examples/services/blogs
+      dockerfile: Dockerfile
 
   payments:
     ports:
       - "5002:5002"
     build:
-      dockerfile: payments.Dockerfile
+      context: ./examples/services/payments
+      dockerfile: Dockerfile
 
   notifications:
     ports:
       - "5001:5001"
     build:
-      dockerfile: notifications.Dockerfile
+      context: ./examples/services/notifications
+      dockerfile: Dockerfile

@@ -21,6 +21,8 @@ func main() {
 	})
 
 	configPath := flag.String("cfg", "config.yaml", "config file")
+	flag.Parse()
+
 	if utils.IsStrNilOrEmpty(configPath) {
 		log.Fatal("empty config path")
 	}

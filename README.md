@@ -36,3 +36,8 @@ state Состояние3: service3.handler
 state Состояние1: service1.handler
 state Состояние1: retry=1m,2m,3m,1h
 ```
+
+## Разворачивание с тестовым окружением
+
+`docker-compose up` - поднять БД и три тестовых сервиса
+`make run` - запустить сервис конечных автоматов

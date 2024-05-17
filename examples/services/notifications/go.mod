@@ -4,12 +4,12 @@ go 1.22.3
 
 require (
 	github.com/sirupsen/logrus v1.9.3
-	github.com/timickb/narration-engine v0.0.0-20240512112549-57c42c9da8b2
 	google.golang.org/grpc v1.59.0
 )
 
 require (
 	github.com/golang/protobuf v1.5.4 // indirect
+	github.com/timickb/narration-engine v0.0.0-20240516185045-1ef813193d0d // indirect
 	golang.org/x/net v0.18.0 // indirect
 	golang.org/x/sys v0.15.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
