@@ -114,7 +114,7 @@ func (w *AsyncWorker) buildHandlerParams(instance *domain.Instance, nextState *d
 			}
 			result[paramName] = ctxValue
 		} else {
-			result[paramName] = paramValue
+			result[paramName] = paramValue.Value
 		}
 	}
 	marshalled, err := json.Marshal(result)

@@ -1,6 +1,6 @@
 services:
 
-  postgres_db:
+  engine_db:
     image: postgres:15.0-alpine
     command: postgres -c 'max_connections=5000'
     restart: on-failure
@@ -14,18 +14,62 @@ services:
       POSTGRES_DB: go-stateflow
       POSTGRES_HOST_AUTH_METHOD: trust
 
+  blogs_db:
+    image: postgres:15.0-alpine
+    command: postgres -c 'max_connections=5000'
+    restart: on-failure
+    volumes:
+      - ./examples/services/blogs/.postgres_data/:/var/lib/postgresql/data
+    ports:
+      - "5453:5432"
+    environment:
+      POSTGRES_PASSWORD: qwerty
+      POSTGRES_USER: blogs
+      POSTGRES_DB: blogs
+      POSTGRES_HOST_AUTH_METHOD: trust
+
+  notifications_db:
+    image: postgres:15.0-alpine
+    command: postgres -c 'max_connections=5000'
+    restart: on-failure
+    volumes:
+      - ./examples/services/notifications/.postgres_data/:/var/lib/postgresql/data
+    ports:
+      - "5451:5432"
+    environment:
+      POSTGRES_PASSWORD: qwerty
+      POSTGRES_USER: notifications
+      POSTGRES_DB: notifications
+      POSTGRES_HOST_AUTH_METHOD: trust
+
+  payments_db:
+    image: postgres:15.0-alpine
+    command: postgres -c 'max_connections=5000'
+    restart: on-failure
+    volumes:
+      - ./examples/services/payments/.postgres_data/:/var/lib/postgresql/data
+    ports:
+      - "5452:5432"
+    environment:
+      POSTGRES_PASSWORD: qwerty
+      POSTGRES_USER: payments
+      POSTGRES_DB: payments
+      POSTGRES_HOST_AUTH_METHOD: trust
+
   engine:
     restart: on-failure
     ports:
       - "2140:2140"
     depends_on:
-      - postgres_db
+      - engine_db
     build:
       dockerfile: ./Dockerfile
 
   blogs:
     ports:
       - "5003:5003"
+    depends_on:
+      - blogs_db
     build:
       context: ./examples/services/blogs
       dockerfile: Dockerfile
@@ -33,6 +77,8 @@ services:
   payments:
     ports:
       - "5002:5002"
+    depends_on:
+      - payments_db
     build:
       context: ./examples/services/payments
       dockerfile: Dockerfile
@@ -40,6 +86,8 @@ services:
   notifications:
     ports:
       - "5001:5001"
+    depends_on:
+      - notifications_db
     build:
       context: ./examples/services/notifications
       dockerfile: Dockerfile

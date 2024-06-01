@@ -5,11 +5,13 @@ import (
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 	log "github.com/sirupsen/logrus"
+	"github.com/timickb/narration-engine/pkg/db"
 	"github.com/timickb/narration-engine/pkg/worker"
 	schema "github.com/timickb/narration-engine/schema/v1/gen"
 	"github.com/timickb/payments-example/internal/domain"
 	"github.com/timickb/payments-example/internal/handler"
 	"github.com/timickb/payments-example/internal/usecase"
+	"github.com/timickb/payments-example/migrations"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"net"
@@ -41,8 +43,30 @@ var (
 )
 
 func main() {
-	uc := usecase.New()
+	ctx := context.Background()
+	d, err := db.CreatePostgresConnection(ctx, &db.PostgresConfig{
+		Host:               "localhost",
+		Name:               "payments",
+		User:               "payments",
+		Password:           "qwerty",
+		SSLMode:            "disable",
+		Port:               5452,
+		MaxOpenConnections: 20,
+		MaxIdleConnections: 20,
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+	sqlDb, err := d.SqlDB()
+	if err != nil {
+		log.Fatalf("get sql db: %s", err.Error())
+	}
+	err = migrations.Migrator.Migrate(sqlDb, "payments")
+	if err != nil {
+		log.Fatalf("make migration: %s", err.Error())
+	}
 
+	uc := usecase.New()
 	uc.AccountCreate(context.Background(), sampleAccount1)
 	uc.AccountCreate(context.Background(), sampleAccount2)
 	uc.AccountCreate(context.Background(), sampleAccount3)

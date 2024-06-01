@@ -6,7 +6,9 @@ import (
 	"github.com/timickb/blogs-example/internal/domain"
 	"github.com/timickb/blogs-example/internal/handler"
 	"github.com/timickb/blogs-example/internal/usecase"
+	"github.com/timickb/blogs-example/migrations"
 	"github.com/timickb/blogs-example/repository"
+	"github.com/timickb/narration-engine/pkg/db"
 	"github.com/timickb/narration-engine/pkg/worker"
 	schema "github.com/timickb/narration-engine/schema/v1/gen"
 	"google.golang.org/grpc"
@@ -67,6 +69,27 @@ var (
 
 func main() {
 	ctx := context.Background()
+	d, err := db.CreatePostgresConnection(ctx, &db.PostgresConfig{
+		Host:               "localhost",
+		Name:               "blogs",
+		User:               "blogs",
+		Password:           "qwerty",
+		SSLMode:            "disable",
+		Port:               5453,
+		MaxOpenConnections: 20,
+		MaxIdleConnections: 20,
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+	sqlDb, err := d.SqlDB()
+	if err != nil {
+		log.Fatalf("get sql db: %s", err.Error())
+	}
+	err = migrations.Migrator.Migrate(sqlDb, "blogs")
+	if err != nil {
+		log.Fatalf("make migration: %s", err.Error())
+	}
 	blogRepo := repository.NewBlogRepo()
 	publicationRepo := repository.NewPublicationRepo()
 	blogUsecase := usecase.NewBlogUsecase(blogRepo, publicationRepo)
